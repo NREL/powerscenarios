@@ -20,11 +20,6 @@ cd ../powerscenarios/
 pip install -e .
 ```
 
-## optional packages
-```bash
-conda install -c conda-forge gmaps # for visualization of grids (buses, wind sites, power lines, etc)
-pip install cufflinks # for quick scenario plotting 
-```
 
 ## notebooks/ contains examples to get started
 

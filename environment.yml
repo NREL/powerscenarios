@@ -1,0 +1,22 @@
+dependencies:                                                                                                                               
+ - python=3
+ - flask
+ - h5py
+ - jupyter
+ - matplotlib
+ - requests
+ - hdf4
+ - netCDF4
+ - nose
+ - pandas
+ - psycopg2
+ - shapely
+ - boto3
+ - s3fs
+ - numpy
+ - Cython
+ - pip:
+         - cufflinks
+
+
+
