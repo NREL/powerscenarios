@@ -1,4 +1,8 @@
+
 powerscenarios
+
+![alt text] (docs/images/total_wind_power.png)
+
 =====================
 
 Renewable energy scenarios for stochastic grid operation problems
