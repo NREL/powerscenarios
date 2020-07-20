@@ -303,7 +303,7 @@ class Grid(object):
 
         #  we need unique GenUID because BusNum is not unique ( multiple wind generators attached to one bus happen)
         # bus_numbers = wind_sites_df['BusNum'].unique()
-        gen_uids = wind_sites_df["GenUID"]
+        gen_uids = wind_sites_df["GenUID"].unique()
         # for bus_number in bus_numbers:
         for gen_uid in gen_uids:
             # actuals_df['Bus'+str(bus_number)] = 0.
@@ -349,7 +349,6 @@ class Grid(object):
         actuals_end=pd.Timestamp("2007-12-31 23:55:00", tz="utc"),
         scenarios_start=pd.Timestamp("2008-01-01 00:00:00", tz="utc"),
         scenarios_end=pd.Timestamp("2013-12-31 23:55:00", tz="utc"),
-        source="AWS",
         **kwargs,
     ):
         """ Method retrieves data from wtk and makes actuals(DataFrame) and scenarios(DataFrame) 
