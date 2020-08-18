@@ -267,11 +267,12 @@ class Parser(object):
 
         return bus_df, new_gen_df, wind_gen_df
 
-    def parse_rts_csvs(self, bus_csv_file_name, gen_csv_file_name):
+    def parse_rts_csvs(self, bus_csv_file_name, gen_csv_file_name, solar2wind=False):
         """ function to parse RTS grid .csv files (bus.csv and gen.csv)
         Required Args:
             bus_csv_file_name - (String) path to RTS bus.csv file
             gen_csv_file_name - (String) path to RTS gen.csv file
+            solar2wind - (Bool) turns all solar generators to wind genearators, default = False 
         Returns:
             bus_df (pandas DataFrame) 
             gen_df (pandas DataFrame) 
@@ -293,7 +294,7 @@ class Parser(object):
             inplace=True,
         )
 
-        # read original gen.csv, take what you need, and save as .csv
+        # read original gen.csv, 
         gen_df = pd.read_csv(gen_csv_file_name)
 
         ## all we really need is gen ID, Fuel, PMax MW
@@ -311,8 +312,10 @@ class Parser(object):
             inplace=True,
         )
         # gen_df.rename(columns={'Bus ID':'BusNum', 'Fuel':'GenFuelType', 'PMax MW':'GenMWMax' , }, inplace=True)
+        # turn solar to wind?
+        if solar2wind:
+            gen_df.loc[gen_df['GenFuelType']=='Solar','GenFuelType']='Wind'
 
-        # take wind generators and solar generators (turn them into wind)
         # wind generators
         wind_gen_df = gen_df.loc[gen_df["GenFuelType"] == "Wind"].copy()
 
