@@ -1,6 +1,6 @@
 powerscenarios
 =====================
-<img src="/docs/images/TAMU2000.png" width="400" height="300"> <img src="/docs/images/total_wind_power.png" width="450" height="300">   
+<img src="/docs/images/TAMU2000.png" width="380" height="300"> <img src="/docs/images/total_wind_power.png" width="430" height="300">   
 Renewable energy scenarios for stochastic grid operation problems
 
 ## how to install
