@@ -5,7 +5,7 @@ Renewable energy scenarios for stochastic grid operation problems
 
 ## how to install
 
-* on Summit make sure to load conda module
+* on Summit load conda module
 ```bash
 module load python/3.7.0-anaconda3-5.3.0
 ```

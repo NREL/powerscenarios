@@ -15,6 +15,7 @@ dependencies:
  - s3fs
  - numpy
  - Cython
+ - pyyaml
  - pip:
          - cufflinks
 
