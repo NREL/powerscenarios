@@ -1,7 +1,7 @@
-# grid data 
+# grid data, i.e. network description data 
 data_dir: ../data/grid-data/
 
-# grid name
+# grid name: RTS, ACTIVSg200, ACTIVSg2000, ...
 grid:
     name: ACTIVSg200 
 
@@ -12,15 +12,30 @@ tables:
     scenarios_start: 2008-01-01 00:00:00 
     scenarios_end: 2013-12-31 23:55:00 
 
-penetration: 
+# change wind peretration?
+wind_penetration:
+    change: False 
+    new_value: 30.
 
 # scenarios 
 scenario:
     start: 2007-07-01 00:00:00
-    end: 2007-07-01 00:15:00 
+    end: 2007-07-01 00:05:00 
     sampling_method: monte carlo 
     n_scenarios: 3 
     n_periods: 2 
 
-# output dir for actuals, scenarios, and weights
-output_dir: ./ 
+
+# output of actuals, scenarios, and weights
+output:
+    dir: ./output 
+    df_format: original 
+    file_format: aux 
+
+
+# other flags
+# convert solar to wind in RTS grid case?
+RTS_solar2wind: True
+
+
+

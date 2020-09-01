@@ -11,7 +11,7 @@ logging.basicConfig()
 
 # do this before importing pywtk, so that WIND_MET_NC_DIR and WIND_FCST_DIR are set correctly
 # if cache dir is set, will use AWS (as opposed to local data)
-os.environ["PYWTK_CACHE_DIR"] = os.path.join(os.environ["HOME"], "pywtk-data")
+#os.environ["PYWTK_CACHE_DIR"] = os.path.join(os.environ["HOME"], "pywtk-data")
 
 from pywtk.wtk_api import get_nc_data, site_from_cache, WIND_FCST_DIR, WIND_MET_NC_DIR
 import pywtk
