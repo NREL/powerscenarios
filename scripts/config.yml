@@ -1,4 +1,6 @@
 # grid data, i.e. network description data 
+# download as needed from 
+# https://electricgrids.engr.tamu.edu/electric-grid-test-cases/
 data_dir: ../data/grid-data/
 
 # grid name: RTS, ACTIVSg200, ACTIVSg2000, ACTIVSg10k, ... 
@@ -12,15 +14,16 @@ tables:
     scenarios_start: 2008-01-01 00:00:00 
     scenarios_end: 2013-12-31 23:55:00 
 
-# change wind peretration?
+# (optional) change wind power peretration percentage on the grid 
 wind_penetration:
     change: False 
     new_value: 30.
 
-# scenarios 
+# parameters for generated scenarios 
 scenario:
     start: 2007-07-01 00:00:00
     end: 2007-07-01 00:05:00 
+    # sampling methods available: monte carlo,  importance
     sampling_method: monte carlo 
     n_scenarios: 3 
     n_periods: 2 
@@ -30,6 +33,7 @@ scenario:
 output:
     dir: ./output 
     df_format: original 
+    # file formats available: csv, aux
     file_format: aux 
 
 
