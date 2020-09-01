@@ -180,12 +180,12 @@ class Grid(object):
     #         wind_penetration = 100*wind_capacity/total_capacity
     #         print('curent wind penetration: {:.2f}%'.format(wind_penetration))
 
-    def retrieve_wind_sites(self, **kwargs):
+    def retrieve_wind_sites(self, method = "simple proximity", **kwargs):
         """ Method to retrieve wind sites (SiteID) nearest to wind generators (up to their capacity, GenMWMax).
             Requires pywtk_api. 
 
-        TODO: Required Args:
-            method='nearest'  vs. 'capacity factor'
+         Required Args:
+            method='simple proximity',  TODO: 'capacity factor'
 
         """
 
@@ -193,57 +193,58 @@ class Grid(object):
         # i.e. turn Latitude and Longitude of wind generators into wkt POINT format (add it as a new column)
         # both, astype and apply work
         # wind_gen_df['wkt'] = 'POINT(' + wind_gen_df['Longitude'].astype(str) + ' ' + wind_gen_df['Latitude'].astype(str) + ')'
+        if method == "simple proximity":
 
-        wind_gen_df = self.wind_generators
+	        wind_gen_df = self.wind_generators
 
-        wind_gen_df["Point"] = (
-            "POINT("
-            + wind_gen_df["Longitude"].apply(str)
-            + " "
-            + wind_gen_df["Latitude"].apply(str)
-            + ")"
-        )
+	        wind_gen_df["Point"] = (
+	            "POINT("
+	            + wind_gen_df["Longitude"].apply(str)
+	            + " "
+	            + wind_gen_df["Latitude"].apply(str)
+	            + ")"
+	        )
 
-        print("Retrieving wind sites ...")
-        # will create a DataFrame out of this list of dicts (rows)
-        wind_sites_list = []
+	        print("Retrieving wind sites ...")
+	        # will create a DataFrame out of this list of dicts (rows)
+	        wind_sites_list = []
 
-        site_ids_list = []  # for keeping track of used sites (don't want repeats)
+	        site_ids_list = []  # for keeping track of used sites (don't want repeats)
 
-        for row in wind_gen_df.itertuples():
-            gen_capacity = row.GenMWMax
-            gen_wkt_point = row.Point
-            # retrieve wind sites sorted by proximity to gen location
-            sorted_sites = pywtk.site_lookup.get_3tiersites_from_wkt(gen_wkt_point)
-            # keep adding sites to the list until gen capacity is exceeded
-            total_sites_capacity = 0.0
-            for site in sorted_sites.itertuples():
+	        for row in wind_gen_df.itertuples():
+	            gen_capacity = row.GenMWMax
+	            gen_wkt_point = row.Point
+	            # retrieve wind sites sorted by proximity to gen location
+	            sorted_sites = pywtk.site_lookup.get_3tiersites_from_wkt(gen_wkt_point)
+	            # keep adding sites to the list until gen capacity is exceeded
+	            total_sites_capacity = 0.0
+	            for site in sorted_sites.itertuples():
 
-                wind_site = {
-                    "SiteID": site.Index,
-                    "Capacity": site.capacity,
-                    "Point": str(site.point),
-                    "Latitude": site.lat,
-                    "Longitude": site.lon,
-                    "BusNum": row.BusNum,  # add BusNum this site belongs to (maybe it'll be usefull)
-                    "GenUID": row.GenUID,  # add GenUID (generator unique ID) this site belongs to
-                }
-                # note that site.point is of type : shapely.geometry.point.Point
-                # hence, turn it into str, since get_wind_data_by_wkt() wants a str (stupid, isn't it?)
+	                wind_site = {
+	                    "SiteID": site.Index,
+	                    "Capacity": site.capacity,
+	                    "Point": str(site.point),
+	                    "Latitude": site.lat,
+	                    "Longitude": site.lon,
+	                    "BusNum": row.BusNum,  # add BusNum this site belongs to (maybe it'll be usefull)
+	                    "GenUID": row.GenUID,  # add GenUID (generator unique ID) this site belongs to
+	                }
+	                # note that site.point is of type : shapely.geometry.point.Point
+	                # hence, turn it into str, since get_wind_data_by_wkt() wants a str (stupid, isn't it?)
 
-                # if wind site is not in the list already, add it to the list (don't want repeats)
-                if not (site.Index in site_ids_list):
-                    wind_sites_list.append(wind_site)
-                    site_ids_list.append(site.Index)
-                    total_sites_capacity += site.capacity
+	                # if wind site is not in the list already, add it to the list (don't want repeats)
+	                if not (site.Index in site_ids_list):
+	                    wind_sites_list.append(wind_site)
+	                    site_ids_list.append(site.Index)
+	                    total_sites_capacity += site.capacity
 
-                if total_sites_capacity > gen_capacity:
-                    break
+	                if total_sites_capacity > gen_capacity:
+	                    break
 
-        wind_sites_df = pd.DataFrame(wind_sites_list)
+	        wind_sites_df = pd.DataFrame(wind_sites_list)
 
-        self.wind_sites = wind_sites_df
-        print("Done")
+	        self.wind_sites = wind_sites_df
+	        print("Done")
         # return wind_sites_df
 
     # internal, used for make_tables
