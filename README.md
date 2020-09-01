@@ -59,6 +59,6 @@ python generate_scenrios.py config.yaml
 ```
 
 ## additional reading
-* [D. Sigler, J. Maack, I. Satkauskas, M. Reynolds and W. Jones, "Scalable Transmission Expansion Under Uncertainty Using Three-stage Stochastic Optimization," 2020 IEEE Power & Energy Society Innovative Smart Grid Technologies Conference (ISGT), Washington, DC, USA, 2020, pp. 1-5, doi: 10.1109/ISGT45199.2020.9087776.](https://ieeexplore.ieee.org/document/9087776)
+* D. Sigler, J. Maack, I. Satkauskas, M. Reynolds and W. Jones, ["Scalable Transmission Expansion Under Uncertainty Using Three-stage Stochastic Optimization,"](https://ieeexplore.ieee.org/document/9087776) 2020 IEEE Power & Energy Society Innovative Smart Grid Technologies Conference (ISGT), Washington, DC, USA, 2020, pp. 1-5, doi: 10.1109/ISGT45199.2020.9087776.]
 
 
