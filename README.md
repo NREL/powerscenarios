@@ -1,5 +1,6 @@
 powerscenarios
 =====================
+![](/docs/images/total_wind_power.png)
 
 Renewable energy scenarios for stochastic grid operation problems
 
@@ -59,6 +60,7 @@ python generate_scenrios.py config.yaml
 ```
 
 ## additional reading
+* Reynolds, AM., I. Satkauskas, J. Mack, D. Sigler, W. Jones. “Scenario creation and power-conditioning strategies for operating power grids with two-stage stochastic economic dispatch.” In Proceedings of the 2020 IEEE Power & Energy Society General Meeting 
 * D. Sigler, J. Maack, I. Satkauskas, M. Reynolds and W. Jones, ["Scalable Transmission Expansion Under Uncertainty Using Three-stage Stochastic Optimization,"](https://ieeexplore.ieee.org/document/9087776) 2020 IEEE Power & Energy Society Innovative Smart Grid Technologies Conference (ISGT), Washington, DC, USA, 2020, pp. 1-5, doi: 10.1109/ISGT45199.2020.9087776.]
 
 
