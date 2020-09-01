@@ -56,7 +56,7 @@ export PYWTK_CACHE_DIR=${PROJWORK}/csc359/pywtk-data
 * modify config.yaml as needed and run
 
 ```bash
-python generate_scenrios.py config.yaml
+python generate_scenrios.py config.yml
 ```
 
 ## additional reading
