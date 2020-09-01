@@ -5,7 +5,12 @@ Renewable energy scenarios for stochastic grid operation problems
 
 ## how to install
 
-* create a conda environment and install pywtk, powerscenarios
+* on Summit make sure to load conda module
+```bash
+module load python/3.7.0-anaconda3-5.3.0
+```
+
+* clone and install pywtk, powerscenarios
 
 ```bash
 git clone https://github.com/NREL/pywtk.git
@@ -31,7 +36,7 @@ pip install cufflinks # for quick scenario plotting
 
 * set environment variable PYWTK_CACHE_DIR to where WIND Toolkit data is/should be stored 
 
-* if data is missing it will be dowloaded from AWS
+* if data is missing it will be dowloaded from AWS as needed
 
 * e.g. on a local machine add to .bash_profile:
 ```bash
