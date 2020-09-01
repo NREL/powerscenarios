@@ -1,7 +1,7 @@
 powerscenarios
 =====================
+Realistic data-driven renewable energy scenarios for stochastic grid operation problems
 <img src="/docs/images/TAMU2000.png" width="380" height="300"> <img src="/docs/images/total_wind_power.png" width="430" height="300">   
-Data-based renewable energy scenarios for stochastic grid operation problems
 
 ## how to install
 
