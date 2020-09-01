@@ -58,4 +58,7 @@ export PYWTK_CACHE_DIR=${PROJWORK}/csc359/pywtk-data
 python generate_scenrios.py config.yaml
 ```
 
+## additional reading
+* [Article](https://ieeexplore.ieee.org/document/9087776)
+
 
