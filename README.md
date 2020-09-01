@@ -9,7 +9,7 @@ Renewable energy scenarios for stochastic grid operation problems
 
 ```bash
 git clone https://github.com/NREL/pywtk.git
-git clone git@github.nrel.gov:isatkaus/powerscenarios.git
+git clone https://github.com/NREL/powerscenarios.git
 cd powerscenarios
 conda env update -n powerscenarios
 source activate powerscenarios
