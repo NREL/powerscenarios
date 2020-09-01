@@ -1,7 +1,7 @@
 # grid data, i.e. network description data 
 data_dir: ../data/grid-data/
 
-# grid name: RTS, ACTIVSg200, ACTIVSg2000, ...
+# grid name: RTS, ACTIVSg200, ACTIVSg2000, ACTIVSg10k, ... 
 grid:
     name: ACTIVSg200 
 
