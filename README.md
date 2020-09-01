@@ -42,9 +42,9 @@ pip install cufflinks # for quick scenario plotting
 ```bash
 export PYWTK_CACHE_DIR=${HOME}/pywtk-data
 ```
-* on Summit data is located at
+* e.g. on Summit add to .bash_profile: 
 ```bash
-${PROJWORK}/csc359/pywtk-data  
+export PYWTK_CACHE_DIR=${PROJWORK}/csc359/pywtk-data  
 ```
 
 ## notebooks/ contains examples to get started
