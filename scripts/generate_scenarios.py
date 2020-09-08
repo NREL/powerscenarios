@@ -263,7 +263,7 @@ def main():
 
             with open(filename, "w") as f:
                 # .aux header
-                _ = f.write("DATA (Gen, [BusNum,GenID,GenMW)]\n")
+                _ = f.write("DATA (Gen, [BusNum,GenID,GenMW])\n")
                 _ = f.write("{\n")
                 # each series entry is one line
                 for k in range(len(s)):
@@ -276,6 +276,8 @@ def main():
                         + '"'
                         + delimiter
                         + str(s[k])
+                        + delimiter
+                        + '"Closed"'
                         + "\n"
                     )
                 # .aux EOF
@@ -295,7 +297,7 @@ def main():
 
             with open(filename, "w") as f:
                 # .aux header
-                _ = f.write("DATA (Gen, [BusNum,GenID,GenMW)]\n")
+                _ = f.write("DATA (Gen, [BusNum,GenID,GenMW])\n")
                 _ = f.write("{\n")
                 # each series entry is one line
                 for k in range(len(s)):
@@ -308,6 +310,8 @@ def main():
                         + '"'
                         + delimiter
                         + str(s[k])
+                        + delimiter
+                        + '"Closed"'
                         + "\n"
                     )
                 # .aux EOF
