@@ -14,6 +14,7 @@ class AbstractCostingFidelity(object):
                  spilled_wind_cost,
                  scenarios_df,
                  p_bin,
+                 total_power_t0,
                  WTK_DATA_PRECISION=6):
 
         self.n_scenarios = n_scenarios
@@ -22,4 +23,5 @@ class AbstractCostingFidelity(object):
         self.spilled_wind_cost = spilled_wind_cost
         self.scenarios_df = scenarios_df
         self.p_bin = p_bin
+        self.total_power_t0 = total_power_t0
         self.WTK_DATA_PRECISION=WTK_DATA_PRECISION

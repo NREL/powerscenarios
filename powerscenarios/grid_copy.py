@@ -8,7 +8,7 @@ import sys
 import os
 
 from powerscenarios.costs.checkmark import CheckmarkModel
-from powerscenarios.costs.exago import ExaGO_File
+#from powerscenarios.costs.exago import ExaGO_File
 
 logging.basicConfig()
 
@@ -44,7 +44,7 @@ class Grid(object):
 
     # attributes
 
-    blet = "ble"
+    blet = "blet"
     WTK_DATA_PRECISION = 6
 
     # if __repr__ is defined, then __str__ = __repr__ (converse is not true)
@@ -442,128 +442,14 @@ class Grid(object):
 
         self.scenarios = scenarios_df
 
-    # old make tables method
-    def make_tables2(
-        self,
-        percentiles=(10, 90),
-        actuals_start=pd.Timestamp("2007-01-01 00:00:00", tz="utc"),
-        actuals_end=pd.Timestamp("2007-12-31 23:55:00", tz="utc"),
-        scenarios_start=pd.Timestamp("2008-01-01 00:00:00", tz="utc"),
-        scenarios_end=pd.Timestamp("2013-12-31 23:55:00", tz="utc"),
-        source="AWS",
-        **kwargs,
-    ):
-        """ Method retrieves data from wtk and makes actuals(DataFrame) and scenarios(dictionary) containing power conditioned (low, medium, and high) tables(DataFrame)
-            and quantiles(ndarray) corresponding to input percentiles(tuple), default is (10,90).
-            e.g. rts.make_tables(percentiles=(20,80))
-            Timestamps for actuals and scenarios: pick dates from 2007-01-01 to 2013-12-31
-            Required args:
-                percentiles - (tuple)
-                actuals_start - (pd.Timestamp)
-                actuals_end - (pd.Timestamp)
-                scenarios_start - (pd.Timestamp)
-                scenarios_end - (pd.Timestamp)
-                source - (str) placeholder
-        """
 
-        # time window selection:
-        # one year, e.g. 2007, for the actuals
-        # start_of_data = pd.Timestamp('2007-01-01 00:00:00', tz='utc')
-        # end_of_data = pd.Timestamp('2007-12-31 23:55:00', tz='utc')
-        # start_of_data = pd.Timestamp('2007-01-01 00:00:00').tz_localize('US/Pacific')
-        # end_of_data = pd.Timestamp('2007-12-31 23:55:00').tz_localize('US/Pacific')
-
-        # one year, 2013, for the actuals
-        # start_of_data = pd.Timestamp('2013-01-01 00:00:00', tz='utc')
-        # end_of_data = pd.Timestamp('2013-12-31 23:55:00', tz='utc')
-
-        wind_sites_df = self.wind_sites
-        actuals_df = self.retrieve_wtk_data(actuals_start, actuals_end)
-
-        # index does not have timezone in Devon's code, but it should
-        # actuals_df.index = actuals_df.index.tz_localize(None)
-
-        ###### fix "over" problem
-        # max actual power can not go above GenMWMax
-        # note that, it does not go "under" - WTK takes care of that
-        max_gen_capacity = self.wind_generators.set_index("GenUID")["GenMWMax"]
-        actuals_df = actuals_df[actuals_df < max_gen_capacity].fillna(max_gen_capacity)
-        # grid.actuals = new_df
-
-        # add total power column (accross all buses)
-        actuals_df["TotalPower"] = actuals_df.sum(axis=1).values
-
-        self.actuals = actuals_df
-
-        # for scenarios_df, just change time window, last 6 years
-        # start_of_data = pd.Timestamp('2008-01-01 00:00:00', tz='utc')
-        # end_of_data = pd.Timestamp('2013-12-31 23:55:00', tz='utc')
-        # start_of_data = pd.Timestamp('2008-01-01 00:00:00').tz_localize('US/Pacific')
-        # end_of_data = pd.Timestamp('2013-12-31 23:55:00').tz_localize('US/Pacific')
-
-        # for scenarios_df, just change time window, first 6 years
-        # start_of_data = pd.Timestamp('2007-01-01 00:00:00', tz='utc')
-        # end_of_data = pd.Timestamp('2012-12-31 23:55:00', tz='utc')
-
-        scenarios_df = self.retrieve_wtk_data(scenarios_start, scenarios_end)
-
-        # index does not have timezone in Devon's code, but it should
-        # scenarios_df.index = scenarios_df.index.tz_localize(None)
-
-        # add total power column (accross all generators)
-        scenarios_df["TotalPower"] = scenarios_df.sum(axis=1).values
-
-        # compute deviations
-        # i.e. make error calculations (instead of full power at each bus, have deviations from persistence)
-
-        # deviations from persistence at generators
-        gen_deviations_array = (
-            scenarios_df.iloc[1:, :-1].values - scenarios_df.iloc[:-1, :-1].values
-        )
-        # total power veviations
-        total_power_deviations_array = (
-            scenarios_df["TotalPower"].values[1:]
-            - scenarios_df["TotalPower"].values[:-1]
-        )
-        # drop last row
-        scenarios_df.drop(scenarios_df.tail(1).index, inplace=True)
-        # record deviations
-        scenarios_df.iloc[:, :-1] = gen_deviations_array
-        scenarios_df["Deviation"] = total_power_deviations_array
-
-        # power conditioning:
-        # create total power conditioning tables based on chosen percentiles
-        # i.e. splits scenarios_df into three subsets (low, medium, high)
-        # should be generalized
-        scenarios = {}
-
-        # get quantiles
-        quantiles = np.percentile(scenarios_df["TotalPower"].values, percentiles)
-        scenarios["quantiles"] = quantiles
-        # print('quantiles = {}'.format(quantiles))
-
-        # create tables
-
-        scenarios["low"] = scenarios_df.loc[
-            scenarios_df["TotalPower"] < quantiles[0]
-        ].copy()
-        scenarios["medium"] = scenarios_df.loc[
-            (scenarios_df["TotalPower"] > quantiles[0])
-            & (scenarios_df["TotalPower"] < quantiles[1])
-        ].copy()
-        scenarios["high"] = scenarios_df.loc[
-            scenarios_df["TotalPower"] > quantiles[1]
-        ].copy()
-
-        self.scenarios = scenarios
-
-        # new method
 
     def generate_wind_scenarios(
         self,
         timestamp,
         power_quantiles=[0.0, 0.1, 0.9, 1.0],
         sampling_method="monte carlo",
+        fidelity="checkmark",
         n_scenarios=5,
         n_periods=1,
         random_seed=25,
@@ -653,17 +539,18 @@ class Grid(object):
             loss_of_load_cost = 10000 / 12.0
             spilled_wind_cost = 0.001
 
-            use_checkmark = False
-            use_exago = True
-            if use_checkmark:
+
+            if fidelity == "checkmark":
                 pmodel = CheckmarkModel(n_scenarios, # Number of scenarios we actually want in our final csv file
                                         n_periods,
                                         loss_of_load_cost,
                                         spilled_wind_cost,
                                         scenarios_df,
-                                        p_bin)
+                                        p_bin,
+                                        total_power_t0)
                 cost_n = pmodel.compute_scenario_cost(random_seed=594081473)
-            elif use_exago:
+
+            elif fidelity == "exago":
                 pmodel = ExaGO_File(n_scenarios, # Number of scenarios we actually want in our final csv file
                                     n_periods,
                                     loss_of_load_cost,
@@ -694,7 +581,7 @@ class Grid(object):
 
             # IS
             # probability mass function g(s) i.e. importance distribution
-            importance_probs = cost_n.loc[p_bin.index] / cost_n.loc[p_bin.index].sum()
+            importance_probs = cost_n / cost_n.sum()
 
             # sample of n_scenarios timestamps that are in wanted bin with probabilities given by cost_n series
             sample_timestamps = p_bin.sample(
@@ -710,17 +597,14 @@ class Grid(object):
                 zip(range(1, n_scenarios + 1), importance_weights.values)
             )
 
-        # initialize multi-indexed df for all scenarios to return
-
+        # initialize multi-indexed df for all scenarios to return (one sim timestamp)
         iterables = [[timestamps[1]], range(1, n_scenarios + 1), timestamps[1:]]
-        # iterables
-
+        # index
         index = pd.MultiIndex.from_product(
             iterables, names=["sim_timestamp", "scenario_nr", "period_timestamp"]
         )
-        # index
-        multi_scenarios_df = pd.DataFrame(index=index, columns=actuals_df.columns[:-1])
         # multi_scenarios_df
+        multi_scenarios_df = pd.DataFrame(index=index, columns=actuals_df.columns[:-1])
 
         # now find wanted periods for each scenario i.e. consecutive timestamps in scenario_df
         for sample_i, sample_timestamp in enumerate(sample_timestamps):
@@ -728,16 +612,16 @@ class Grid(object):
             # needed timestamps
             # pd.date_range(start=sample_timestamp, periods=n_periods, freq="5min")
             # deviation will be a df even with 1 period because loc is used with pd.date_range
-            deviation = scenarios_df.loc[
+            deviation_df = scenarios_df.loc[
                 pd.date_range(start=sample_timestamp, periods=n_periods, freq="5min")
-            ]
+            ].copy()
 
             # change deviation index to match actuals we adding it to
-            deviation.index = timestamps[1:]
+            deviation_df.index = timestamps[1:]
 
             # make scenario df for each sample_timestamp (could be done outside the loop)
             scenario_df = pd.DataFrame(
-                index=timestamps[1:], columns=deviation.columns
+                index=timestamps[1:], columns=deviation_df.columns
             ).drop(["Deviation", "TotalPower"], axis=1)
             #     print("\nscenario_df:")
             #     scenario_df
@@ -746,10 +630,10 @@ class Grid(object):
             #     actuals_df.loc[timestamps[0]]
 
             # first take actual
-            running_sum = actuals_df.loc[timestamps[0]].drop("TotalPower")
+            running_sum = actuals_df.loc[timestamps[0]].drop("TotalPower").copy()
             # now keep adding deviations to the above actual
             for timestamp in timestamps[1:]:
-                running_sum += deviation.loc[timestamp].drop(
+                running_sum += deviation_df.loc[timestamp].drop(
                     ["TotalPower", "Deviation"],
                 )
                 scenario_df.loc[timestamp] = running_sum
