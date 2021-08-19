@@ -8,6 +8,7 @@ import sys
 import os
 
 from powerscenarios.costs.checkmark import CheckmarkModel
+from powerscenarios.costs.exago import ExaGO_File
 
 logging.basicConfig()
 
@@ -652,8 +653,8 @@ class Grid(object):
             loss_of_load_cost = 10000 / 12.0
             spilled_wind_cost = 0.001
 
-            use_checkmark = True
-            use_exago = False
+            use_checkmark = False
+            use_exago = True
             if use_checkmark:
                 pmodel = CheckmarkModel(n_scenarios, # Number of scenarios we actually want in our final csv file
                                         n_periods,
@@ -664,12 +665,18 @@ class Grid(object):
                 cost_n = pmodel.compute_scenario_cost(random_seed=594081473)
             elif use_exago:
                 pmodel = ExaGO_File(n_scenarios, # Number of scenarios we actually want in our final csv file
-                                        n_periods,
-                                        loss_of_load_cost,
-                                        spilled_wind_cost,
-                                        scenarios_df,
-                                        p_bin)
-                cost_n = pmodel.compute_scenario_cost(random_seed=594081473)
+                                    n_periods,
+                                    loss_of_load_cost,
+                                    spilled_wind_cost,
+                                    scenarios_df,
+                                    p_bin)
+                scenarios_df_copy = scenarios_df.drop(columns=["TotalPower", "Deviation"])
+                cost_n = pmodel.compute_scenario_cost(actuals_df,
+                                                      scenarios_df_copy,
+                                                      timestamp,
+                                                      random_seed=594081473)
+            else:
+                raise NotImplementedError
             # # compute costs of each 1-period scenario
             # cost_1 = scenarios_df["Deviation"].apply(
             #     lambda dev: np.abs(loss_of_load_cost * dev)
@@ -767,299 +774,3 @@ class Grid(object):
 
             multi_scenarios_df.loc[(timestamps[1], sample_i + 1,)] = scenario_df.values
         return multi_scenarios_df, weights_df
-
-
-    def generate_wind_scenarios2(
-        self,
-        timestamps,
-        sampling_method="monte carlo",
-        n_scenarios=5,
-        random_seed=25,
-        output_format=0,
-        **kwargs,
-    ):
-        """Function to generate scenarios
-        Required Args:
-            timestamps - (itterable of pd.Timestamp) [t0,t1,...tn]
-                t0 - initial/current timestamp, power conditioning will be done based on the actual power at this timestamp
-                t1 - time for wich we're making dispatch decisions,
-                t2,..,tn - required only if multiperiod scenarios are needed
-            sampling_method - (string) either "importance" or "monte carlo"
-            n_scenarios - (integer) number of scenarios to draw
-                if n_scenarios == 1 and sampling_method == monte carlo, will return "deterministic case" (zero deviations)
-
-        Returns:
-            actual_df - (pd.DataFrame) actual power for each GenUID (columns) at t1 (index)
-            forcast_df - (pd.DataFrame) actual power for each GenUID (columns) at t0 (index), at t1 values are the same because
-                of persistence forecast
-            scenarios_dict - (dictionary) of scenarios:
-                key - (integer) 1 through <n_scenarios>
-                value - (pd.DataFrame) one scenario: power deviatios from persitance for each BusNum (columns)
-                    at index t0, all zeros (no deviation)
-                    at index t1, actual @ t1 - actual @ t0 (power deviation from t0)
-                    at index t2, actual @ t2 - actual @ t0 (power deviation from t0)
-                    etc...
-
-        """
-
-        # print('time_start={}'.format(time_start))
-        # print('time_end={}'.format(time_end))
-
-        # these were made with make_tables method
-        actuals_df = self.actuals
-        quantiles = self.scenarios.get("quantiles")
-        scenarios_low_power_df = self.scenarios.get("low")
-        scenarios_med_power_df = self.scenarios.get("medium")
-        scenarios_high_power_df = self.scenarios.get("high")
-        # tables list
-        tables = [
-            scenarios_low_power_df,
-            scenarios_med_power_df,
-            scenarios_high_power_df,
-        ]
-        # just concat them all (then multiperiod is much simpler)
-        all_df = pd.concat(tables)
-        all_df.sort_index(inplace=True)
-
-        # basic checks: still needs work for multiperiod
-        for timestamp in timestamps:
-            # type
-            if type(timestamp) != pd._libs.tslibs.timestamps.Timestamp:
-                print("timestamps must be pandas.Timestamp type")
-                return
-
-        # t0 and t1 must be in actuals.index
-        if not (timestamps[0] in actuals_df.index) or not (
-            timestamps[1] in actuals_df.index
-        ):
-            print(
-                "timestamps[0] and timestamps[1] must be between {} and {}".format(
-                    actuals_df.index.min(), actuals_df.index.max()
-                )
-            )
-            return
-
-        # check if t0 < t1
-        if not (timestamps[0] < timestamps[1]):
-            print("timestamps[0] must be < timestamps[1]")
-            return
-
-        # actual power at t1 (same thing whether it is single- or multi-period)
-        actual_df = actuals_df.loc[
-            timestamps[1] : timestamps[1]
-        ].copy()  # loc[t:t] returns frame, loc[t] returns series
-
-        # actual power at t0, same values at index t1 (persistance forecast)
-        forecast_df = pd.DataFrame(index=timestamps[:2], columns=actual_df.columns)
-        forecast_df.loc[timestamps[0]] = actuals_df.loc[timestamps[0]].copy()
-        forecast_df.loc[timestamps[1]] = actuals_df.loc[
-            timestamps[0]
-        ].copy()  # persistence
-
-        # deterministic case: if n_scenarios == 1 and sampling_method == `monte carlo`
-        if n_scenarios == 1 and sampling_method == "monte carlo":
-            # initialize scenario_df (same index as forcast_df)
-            scenario_df = forecast_df.copy()
-            # first row of zeros, because Devon says so
-            scenario_df.loc[timestamps[0]] = 0.0
-            # second row of scenario_df is also 0, because it is deterministic case
-            scenario_df.loc[timestamps[1]] = 0.0
-            # drop TotalPower column
-            scenario_df.drop("TotalPower", axis=1, inplace=True)
-
-            scenarios_dict = {}
-            scenarios_dict[1] = scenario_df
-
-            # drop Total column from actual_df and forecast_df
-            forecast_df.drop("TotalPower", axis=1, inplace=True)
-            actual_df.drop("TotalPower", axis=1, inplace=True)
-
-            return scenarios_dict, actual_df, forecast_df
-
-        # power conditioning on total power at t0
-        actual_total_power = actuals_df.loc[timestamps[0]]["TotalPower"]
-        # print('Actual total power = {}'.format(actual_total_power))
-
-        if actual_total_power < quantiles[0]:
-            # draw scenarions from low power table
-            # print('using low power table (total power < {:.2f})'.format(quantiles[0]))
-            scenarios_df = scenarios_low_power_df.copy()
-        elif actual_total_power > quantiles[1]:
-            # draw scenarions from high power table
-            # print('using high power table (total power > {:.2f})'.format(quantiles[1]))
-            scenarios_df = scenarios_high_power_df.copy()
-        else:
-            scenarios_df = scenarios_med_power_df.copy()
-            # draw scenarions from medium power table
-        # print('using medium power table ({:.2f} < total power < {:.2f})'.format(quantiles[0],quantiles[1]))
-
-        # add weights column (sampling probabilities) depending on the sampling method
-        if sampling_method == "importance":
-            # temporary solution, cost function should come in as one of the variables
-            # if importance sampling (using low fidelity loss function)
-            # parameters of linear loss function
-            loss_of_load_cost = 1000 / 3.0
-            spilled_wind_cost = 0.001
-            scenarios_df["Weight"] = scenarios_df.apply(
-                lambda row: row["Deviation"] * (-loss_of_load_cost)
-                if row["Deviation"] < 0
-                else row["Deviation"] * spilled_wind_cost,
-                axis=1,
-            )
-            # some 'duplicate axis' error is showing when doing the bolow two lines... so lets do slow way as above
-            # this should be prebuilt anyway
-            # apply linear loss function to deviation column to get weight column
-            # scenarios_df.loc[scenarios_df['Deviation']<0,'Weight'] = scenarios_df['Deviation']*(-loss_of_load_cost)
-            # scenarios_df.loc[scenarios_df['Deviation']>0,'Weight'] = scenarios_df['Deviation']*(spilled_wind_cost)
-
-            # normalize
-            scenarios_df["Weight"] = (
-                scenarios_df["Weight"] / scenarios_df["Weight"].sum()
-            )
-
-        elif sampling_method == "monte carlo":
-            # if monte carlo method, all weights are equal
-            scenarios_df["Weight"] = 1.0 / len(scenarios_df)
-
-        # now draw random sample using weight column (the larger the weight the more likely it is to draw that sample)
-        # draw n_scenarios, one by one, accept only if tn is before t_final (which is 2013-12-31 23:50:00, but it could different)
-        # max_index_in_tables = max(scenarios_low_power_df.index.max(),scenarios_med_power_df.index.max(),scenarios_high_power_df.index.max())
-        # same as a bove in a more pythonic way
-        # max_index_in_tables = max([table.index.max() for table in tables])
-        # max_index_in_tables = all_df.index.max()
-
-        # time gaps betweet t1 and ti, i=2,3,...n
-        # for single-period this will be empty list
-        time_gaps_bw_t1_ti = [timestamp - timestamps[1] for timestamp in timestamps[2:]]
-        scenarios_dict = {}
-        key = 1
-        while len(scenarios_dict) < n_scenarios:
-            # print('key={}'.format(key))
-            # print('len(scenarios_dict)={}'.format(len(scenarios_dict)))
-            # while we haven't filled up scenario dict, keep sampling
-            scenario_sample_df = scenarios_df.sample(
-                n=1, weights="Weight", random_state=random_seed + key
-            )
-
-            sample_timestamp = scenario_sample_df.index[0]
-            # print("sample_timestamp={}".format(sample_timestamp))
-            # print('sample_timestamp={}'.format(sample_timestamp))
-            # check if all indices (every 5-min) from sample_timestamp to sample_timestamp + time_gap_bw_t1_tn are in the tables (if not start over)
-            # this check only needed only if multi-period scenarios are required i.e. len(timestamps)>2
-            if time_gaps_bw_t1_ti:
-                needed_timestamps = pd.date_range(
-                    sample_timestamp,
-                    sample_timestamp + time_gaps_bw_t1_ti[-1],
-                    freq="5min",
-                )
-            else:
-                needed_timestamps = []
-
-            for timestamp in needed_timestamps:
-                if not timestamp in all_df.index:
-                    continue
-
-            needed_timestamps_df = all_df.loc[needed_timestamps]
-
-            # drop Deviation and Weight column, no longer needed (they are for conditioning and sampling)
-            scenario_sample_df.drop(["Deviation", "Weight"], axis=1, inplace=True)
-
-            # make scenario df
-            # initialize scenario_df (index as given timestamps)
-            scenario_df = pd.DataFrame(
-                index=timestamps, columns=scenario_sample_df.columns
-            )
-            # deviations at index t0 are all zeros
-            scenario_df.loc[timestamps[0]] = 0.0
-            # deviations at index t1 are the scenarios_sample_df's only entry
-            scenario_df.loc[timestamps[1]] = scenario_sample_df.iloc[0].copy()
-            # all subsequent entries at t2,...,tn are found according to the time distance from t1 (running sum)
-            for i, timestamp in enumerate(timestamps[2:]):
-
-                # print("timestamp={}".format(timestamp))
-                # timedelta from t1
-                # once we stepped all the way to timestamp, record moving sum to the scenario_df
-
-                scenario_df.loc[timestamp] = needed_timestamps_df.loc[
-                    sample_timestamp : sample_timestamp + time_gaps_bw_t1_ti[i]
-                ].sum()
-
-            # drop TotalPower column
-            # print('scenario_df columns:')
-            # print(scenario_df.columns)
-            scenario_df.drop("TotalPower", axis=1, inplace=True)
-
-            ##### fix "over" and "under" capacity problem
-            # "over" = if scenario power (forecast + scenario) goes over GenMWMax capacity
-            # "under" = if scenario power (forecast + scenario) goes under 0 i.e. negative generation
-
-            # for GenMWMax info we take wind generators and reindex by GenUID
-            wind_generators_df = self.wind_generators.set_index(
-                "GenUID"
-            )  # this returns a reindexed copy
-            for timestamp in scenario_df.index[1:]:
-
-                # "over"
-                # if element of over is negative, we need to add it to current and consecutive timestamps
-                # (if positive don't do anything. we accomplish this by zeroing positive elements of over)
-                over = wind_generators_df["GenMWMax"] - (
-                    forecast_df.iloc[0].drop("TotalPower") + scenario_df.loc[timestamp]
-                )
-                # if there are any negetive numbers in over, add the to the tail of scenario_df
-                if (over < 0).any():
-                    over[over > 0.0] = 0.0
-                    scenario_df.loc[timestamp:] = scenario_df.loc[timestamp:] + over
-
-                # "under"
-                # if element of under is negative, we need to subract it from current and consecutive timestamps
-                # (if positive don't do anything. we accomplish this by zeroing positive elements of under)
-                under = (
-                    forecast_df.iloc[0].drop("TotalPower") + scenario_df.loc[timestamp]
-                )
-                if (under < 0).any():
-                    under[under > 0.0] = 0.0
-                    scenario_df.loc[timestamp:] = scenario_df.loc[timestamp:] - under
-
-            # add scenario_df to scenarios_dict
-            scenarios_dict[key] = scenario_df
-            key += 1
-
-        # drop Total column from actual_df and forecast_df
-        forecast_df.drop("TotalPower", axis=1, inplace=True)
-        actual_df.drop("TotalPower", axis=1, inplace=True)
-
-        if output_format == 0:
-            return scenarios_dict, actual_df, forecast_df
-        # make multi indexed df out of the scenarios_dict
-
-        elif output_format == 1:
-            actual_s = actual_df.iloc[0]
-            forecast_s = forecast_df.iloc[0]
-            iterables = [
-                [timestamps[1]],
-                list(scenarios_dict.keys()),
-                scenarios_dict[1].index[1:].to_list(),
-            ]
-            index = pd.MultiIndex.from_product(
-                iterables, names=["sim_timestamp", "scenario_nr", "period_timestamp"]
-            )
-            multi_scenarios_df = pd.DataFrame(
-                index=index, columns=scenarios_dict[1].columns
-            )
-
-            # stick data to df from dict
-            for i, df in scenarios_dict.items():
-                # print("scenario: {}".format(i))
-                period_timestamps = df.index.to_list()
-                for period_timestamp in period_timestamps[
-                    1:
-                ]:  # don't take the first one
-                    # print("period timestamp: {}".format(period_timestamp))
-                    multi_scenarios_df.loc[timestamps[1], i, period_timestamp] = (
-                        df.loc[period_timestamp] + forecast_s
-                    )
-
-            # return total wind power (as opposed to deviation)
-            # multi_scenarios_df=multi_scenarios_df+forecast_s
-
-            return multi_scenarios_df, actual_s
