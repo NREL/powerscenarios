@@ -6,9 +6,7 @@ import sys
 
 # should this be imported only as needed (in retrieve_wind_sites, retrieve_wtk_data,)
 import os
-
 from powerscenarios.costs.checkmark import CheckmarkModel
-#from powerscenarios.costs.exago import ExaGO_File
 
 logging.basicConfig()
 
@@ -549,17 +547,41 @@ class Grid(object):
                                         p_bin,
                                         total_power_t0)
                 cost_n = pmodel.compute_scenario_cost(random_seed=594081473)
-
-            elif fidelity == "exago":
+            elif fidelity == "exago_file":
+                # Import the module
+                from powerscenarios.costs.exago import ExaGO_File
+                pricing_scen_ct = 4
+                p_bin = p_bin.tail(pricing_scen_ct)
                 pmodel = ExaGO_File(n_scenarios, # Number of scenarios we actually want in our final csv file
                                     n_periods,
                                     loss_of_load_cost,
                                     spilled_wind_cost,
-                                    scenarios_df,
-                                    p_bin)
+                                    scenarios_df.loc[p_bin.index],
+                                    p_bin,
+                                    total_power_t0,
+                                    nscen_priced=pricing_scen_ct)
                 scenarios_df_copy = scenarios_df.drop(columns=["TotalPower", "Deviation"])
                 cost_n = pmodel.compute_scenario_cost(actuals_df,
-                                                      scenarios_df_copy,
+                                                      scenarios_df_copy.loc[p_bin.index],
+                                                      timestamp,
+                                                      random_seed=594081473)
+            elif fidelity == "exago_lib":
+                # Import the module
+                from powerscenarios.costs.exago_lib import ExaGO_Lib
+                pricing_scen_ct = 4
+                p_bin = p_bin.tail(pricing_scen_ct)
+                pmodel = ExaGO_Lib(n_scenarios, # Number of scenarios we actually want in our final csv file
+                                   n_periods,
+                                   loss_of_load_cost,
+                                   spilled_wind_cost,
+                                   scenarios_df.loc[p_bin.index],
+                                   p_bin,
+                                   total_power_t0,
+                                   nscen_priced=pricing_scen_ct)
+                scenarios_df_copy = scenarios_df.drop(columns=["TotalPower", "Deviation"])
+
+                cost_n = pmodel.compute_scenario_cost(actuals_df,
+                                                      scenarios_df_copy.loc[p_bin.index],
                                                       timestamp,
                                                       random_seed=594081473)
             else:

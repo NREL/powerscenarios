@@ -12,7 +12,6 @@ from os import path
 import shutil
 
 from powerscenarios.costs.abstract_fidelity import AbstractCostingFidelity
-from exago.opflow import OPFLOW
 import os
 from exago import config
 
@@ -27,7 +26,9 @@ class ExaGO_File(AbstractCostingFidelity):
                  spilled_wind_cost,
                  scenarios_df,
                  p_bin,
-                 WTK_DATA_PRECISION=6):
+                 total_power_t0,
+                 WTK_DATA_PRECISION=6,
+                 nscen_priced=1):
 
         AbstractCostingFidelity.__init__(self,
                                          n_scenarios,
@@ -36,6 +37,7 @@ class ExaGO_File(AbstractCostingFidelity):
                                          spilled_wind_cost,
                                          scenarios_df,
                                          p_bin,
+                                         total_power_t0,
                                          WTK_DATA_PRECISION=6)
 
         self.grid_name = "ACTIVSg200"
@@ -45,9 +47,9 @@ class ExaGO_File(AbstractCostingFidelity):
                        'output_path' : "opflowout.m",
                       }
         self.sopflow_options_dict = {'job_launcher' : self.opflow_options_dict['job_launcher'],
-                                'n_mpi_procs' : '1',
+                                'n_mpi_procs' : '8',
                                 'solver' : 'EMPAR',
-                                'nscenarios' : '2', # This needs to be a string as the function runs a bash command
+                                'nscenarios' : '{0}'.format(nscen_priced), # This needs to be a string as the function runs a bash command
                                }
 
         self._create_ego_object()
@@ -70,7 +72,7 @@ class ExaGO_File(AbstractCostingFidelity):
 
     def compute_scenario_cost(self,
                               actuals_df,
-                              scenarios_df,
+                              binned_scenarios_df,
                               start_time,
                               random_seed=np.random.randint(2 ** 31 - 1)):
 
@@ -112,11 +114,7 @@ class ExaGO_File(AbstractCostingFidelity):
         # Now that we have the base cost, we need to consider the scenarios at a
         # Given timestamps
         # Turn deviations into scenarios
-        w_scen_df = persistence_wind_fcst_df
-        # display(w_scen_df)
-        # display(scenarios_df)
-        wind_scen_df = scenarios_df + w_scen_df.loc[:,scenarios_df.columns].values
-        # display(wind_scen_df)
+        wind_scen_df = binned_scenarios_df + persistence_wind_fcst_df.loc[:,binned_scenarios_df.columns].values
         for wgen in wind_scen_df.columns:
             # Enforce Pmax on wind scenarios
             wgen_max = self.ego.wind_max.loc[wgen]
@@ -216,7 +214,9 @@ class ExaGO_File(AbstractCostingFidelity):
 
         # Zip the numpy array into the timeseries
         cost_n = pd.Series(index=wind_scen_df.index, data=q_cost)
-        print(cost_n)
+        print("q_cost = ", repr(q_cost))
+        print("q_cost max = ", np.amax(q_cost))
+        print("q_cost min = ", np.amin(q_cost))
 
         return cost_n
 
