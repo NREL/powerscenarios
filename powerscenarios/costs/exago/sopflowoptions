@@ -1,0 +1,91 @@
+-netfile /Users/kpanda/UserApps/powerscenarios/notebooks/scen_ACTIVSg200.m
+-scenfile /Users/kpanda/UserApps/powerscenarios/notebooks/scenarios_ACTIVSg200.csv
+-save_output
+-sopflow_solver EMPAR
+
+# Coupling between second stage and first stage?
+-sopflow_iscoupling 1
+
+# Operation mode (preventive (0) or corrective (1))
+-sopflow_mode 0
+
+# Ignore line flow constraints
+-opflow_ignore_lineflow_constraints 0
+
+# Number of scenarios
+# -sopflow_Ns 10
+
+# performance
+#-------------
+#-log_summary
+
+#options
+# Display options left
+-options_left no
+
+#Options for multi-contingency
+
+# Enable multi-contingency
+-sopflow_enable_multicontingency 0
+
+# Number of contingencies
+-scopflow_Nc 0
+
+# Time-step (in minutes)
+-scopflow_dT 5.0
+
+# Duration (in hours)
+-scopflow_duration 0.1666667 # 10 minutes
+
+#--------------------------------------
+# OPFLOW OPTIONS
+#--------------------------------------
+
+# Select model
+-opflow_model POWER_BALANCE_POLAR
+-opflow_initialization ACPF
+
+# Slacks
+-opflow_include_loadloss_variables 1
+-opflow_loadloss_penalty 833.33
+-opflow_include_powerimbalance_variables 1
+-opflow_powerimbalance_penalty 833.33
+# -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
+
+#-------------------------
+# Options for TAO solver
+#--------------------------
+-opflow_tao_type pdipm  # Primal-Dual Interior Point Method (PDIPM)
+-opflow_tao_max_funcs 100000
+-opflow_tao_max_it 200
+# PDIPM SNES Solver Options
+#-opflow_snes_fd
+-opflow_snes_max_it 200
+-opflow_snes_max_funcs 100000
+#-opflow_snes_monitor
+
+# PDIPM SNES-KSP Solver Options
+-opflow_pc_type lu
+-opflow_pc_factor_mat_ordering_type qmd
+-opflow_pc_factor_shift_type NONZERO
+#-opflow_pc_factor_mat_solver_type superlu_dist
+#-opflow_ksp_error_if_not_converged
+#-opflow_ksp_monitor
+
+# Tao tolerances
+-opflow_tao_catol 1e-6
+-opflow_tao_crtol 1e-6
+-opflow_tao_grtol 1e-6
+-opflow_tao_gatol 1e-6
+
+# Convergence monitor
+#-opflow_tao_monitor
+
+# Convergence status
+-opflow_tao_converged_reason
+
+#-opflow_tao_pdipm_solve_reduced_kkt # Solve PDIPM with reduced KKT system using Schur-complement
+#-opflow_pc_type fieldsplit
+-opflow_pc_fieldsplit_type schur
+-opflow_pc_fieldsplit_schur_precondition full
+-opflow_pc_fieldsplit_schur_fact_type full

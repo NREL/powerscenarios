@@ -12,9 +12,11 @@ from os import path
 import shutil
 
 from powerscenarios.costs.abstract_fidelity import AbstractCostingFidelity
-from powerscenarios.costs.matpowerhandler import MatpowerHandler
+from powerscenarios.costs.exago.matpowerhandler import MatpowerHandler
 import os
 from exago import config
+
+exago_options_dir = path.dirname(__file__)
 
 class ExaGO_File(AbstractCostingFidelity):
     """
@@ -60,7 +62,6 @@ class ExaGO_File(AbstractCostingFidelity):
     def _create_ego_object(self):
         # Data files for creating the file based exago object
         network_file = "/Users/kpanda/UserApps/powerscenarios/data/grid-data/{0}/case_{0}.m".format(self.grid_name)
-        grid_aux_file = "/Users/kpanda/UserApps/powerscenarios/data/grid-data/{0}/{0}.aux".format(self.grid_name)
 
         load_dir = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data"
         real_load_file = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadP.csv".format(self.grid_name)
@@ -100,6 +101,7 @@ class ExaGO_File(AbstractCostingFidelity):
                                            system="Mac"
                                            )
 
+        print("\nbase_cost = ", base_cost, "\n")
         # For the second part now is to restore some of the original data and the
         # set points from the abse cost runs
         gen_df = self.ego.imat.get_table('gen')
@@ -151,31 +153,39 @@ class ExaGO_File(AbstractCostingFidelity):
         t2 = time.time()
         system = "Mac"
         if system != "Summit":
+            # exago_cmd = [self.sopflow_options_dict['job_launcher'],
+            #              '-n',
+            #              self.sopflow_options_dict['n_mpi_procs'], # str(1),
+            #              self.ego.sopflow_executable,
+            #              '-sopflow_solver',
+            #              self.sopflow_options_dict['solver'], # 'EMPAR',
+            #              '-netfile',
+            #              matpower_file,
+            #              '-save_output',
+            #              '-opflow_include_loadloss_variables',
+            #              str(1),
+            #              '-opflow_loadloss_penalty',
+            #              str(10000.0 / 12.0),
+            #              '-sopflow_Ns',
+            #              str(self.sopflow_options_dict['nscenarios']), # str(wind_scen_df.shape[0]),
+            #              '-scenfile',
+            #              scenario_file,
+            #              '-opflow_initialization',
+            #              'ACPF', # 'MIDPOINT', # 'FROMFILE', # 'ACPF'
+            #              '-opflow_include_powerimbalance_variables',
+            #              str(1),
+            #              '-opflow_powerimbalance_penalty',
+            #              str(10000.0 / 12.0),
+            #              '-opflow_genbusvoltage',
+            #              'VARIABLE_WITHIN_BOUNDS',
+            #              ]
+            options_file = os.path.join(self.ego.options_dir, "sopflowoptions")
             exago_cmd = [self.sopflow_options_dict['job_launcher'],
-                         '-n',
-                         self.sopflow_options_dict['n_mpi_procs'], # str(1),
+                         '-n', self.sopflow_options_dict['n_mpi_procs'],
                          self.ego.sopflow_executable,
-                         '-sopflow_solver',
-                         self.sopflow_options_dict['solver'], # 'EMPAR',
-                         '-netfile',
-                         matpower_file,
-                         '-save_output',
-                         '-opflow_include_loadloss_variables',
-                         str(1),
-                         '-opflow_loadloss_penalty',
-                         str(10000.0 / 12.0),
+                         '-options_file', options_file,
                          '-sopflow_Ns',
-                         str(self.sopflow_options_dict['nscenarios']), # str(wind_scen_df.shape[0]),
-                         '-scenfile',
-                         scenario_file,
-                         '-opflow_initialization',
-                         'ACPF', # 'MIDPOINT', # 'FROMFILE', # 'ACPF'
-                         '-opflow_include_powerimbalance_variables',
-                         str(1),
-                         '-opflow_powerimbalance_penalty',
-                         str(10000.0 / 12.0),
-                         '-opflow_genbusvoltage',
-                         'VARIABLE_WITHIN_BOUNDS',
+                         str(self.sopflow_options_dict['nscenarios']),
                          ]
 
         else:
@@ -217,6 +227,7 @@ class ExaGO_File(AbstractCostingFidelity):
         # Zip the numpy array into the timeseries
         cost_n = pd.Series(index=wind_scen_df.index, data=q_cost)
         print("q_cost = ", repr(q_cost))
+        # np.savetxt("cost_sys.txt", q_cost)
         print("q_cost max = ", np.amax(q_cost))
         print("q_cost min = ", np.amin(q_cost))
 
@@ -236,9 +247,12 @@ class ExaGO:
 
         start_init = time.time()
 
-        # self.exe_path = exe_path
         self.grid_name = grid_name
         self.network_file = network_file
+
+        # Get the directory where the ExaGO options are located
+        self.options_dir = exago_options_dir
+        print("options_dir = ", self.options_dir)
 
         start = time.time()
         self.imat = MatpowerHandler(network_file)
@@ -419,6 +433,8 @@ class ExaGO:
             shutil.rmtree("sopflowout")
         if path.exists("case_{0}.m".format(self.grid_name)):
             os.remove("case_{0}.m".format(self.grid_name))
+        if path.exists("case_{0}.m".format(self.grid_name)):
+            os.remove("scen_{0}.m".format(self.grid_name))
 
     def _assign_gen_ids(self, gen_df):
         gbuses = gen_df.loc[:,'bus']
@@ -490,17 +506,23 @@ class ExaGO:
                          'ACPF',
                          ]
         else:
+            # exago_cmd = [opflow_options_dict['job_launcher'],
+            #              '-n',
+            #              '1',
+            #              self.opflow_executable,
+            #              '-netfile',
+            #              matpower_file,
+            #              '-opflow_solver',
+            #              opflow_options_dict['opflow_solver'], # 'IPOPT',
+            #              '-save_output',
+            #              '-opflow_initialization',
+            #              'ACPF',
+            #              ]
+            options_file = os.path.join(self.options_dir, "opflowoptions")
             exago_cmd = [opflow_options_dict['job_launcher'],
-                         '-n',
-                         '1',
+                         '-n', '1',
                          self.opflow_executable,
-                         '-netfile',
-                         matpower_file,
-                         '-opflow_solver',
-                         opflow_options_dict['opflow_solver'], # 'IPOPT',
-                         '-save_output',
-                         '-opflow_initialization',
-                         'ACPF',
+                         '-options_file', options_file
                          ]
 
         print("**** ExaGO Command ****\n", exago_cmd, flush=True)

@@ -25,3 +25,4 @@ class AbstractCostingFidelity(object):
         self.p_bin = p_bin
         self.total_power_t0 = total_power_t0
         self.WTK_DATA_PRECISION=WTK_DATA_PRECISION
+        self.set_custom_load = False

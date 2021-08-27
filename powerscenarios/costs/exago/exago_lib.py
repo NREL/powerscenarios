@@ -13,7 +13,7 @@ import shutil
 from mpi4py import MPI
 
 from powerscenarios.costs.abstract_fidelity import AbstractCostingFidelity
-from powerscenarios.costs.matpowerhandler import MatpowerHandler
+from powerscenarios.costs.exago.matpowerhandler import MatpowerHandler
 from exago.opflow import OPFLOW
 import os
 from exago import config
@@ -58,9 +58,9 @@ class ExaGO_Lib(AbstractCostingFidelity):
                            network_file=None):
         # Data files for creating the file based exago object
         network_file = "/Users/kpanda/UserApps/powerscenarios/data/grid-data/{0}/case_{0}.m".format(self.grid_name)
-        load_dir = "/Users/kpanda/UserApps/powerscenarios/data/load-data"
-        real_load_file = "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadP.csv".format(self.grid_name)
-        reactive_load_file = "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadQ.csv".format(self.grid_name)
+        load_dir = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data"
+        real_load_file = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadP.csv".format(self.grid_name)
+        reactive_load_file = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadQ.csv".format(self.grid_name)
 
         self.ego = ExaGO_Python(network_file, load_dir, self.grid_name, real_load_file, reactive_load_file)
         self.ego._cleanup() # Lets clean up the file based implementation.
@@ -97,7 +97,7 @@ class ExaGO_Lib(AbstractCostingFidelity):
                                            self.opflow_options_dict,
                                            system="Mac"
                                            )
-
+        print("\nbase_cost = ", base_cost, "\n")
         # Check if base cost is the same on all ranks
         self.ego.comm.Barrier()
         base_cost_arr = self.ego.comm.gather(base_cost, root=0)
@@ -181,6 +181,7 @@ class ExaGO_Lib(AbstractCostingFidelity):
             # Zip the numpy array into the timeseries
             cost_n = pd.Series(index=wind_scen_df.index, data=q_cost_global)
             print("q_cost_global = ", repr(q_cost_global))
+            # np.savetxt("cost_lib.txt", q_cost_global)
             print("q_cost_global max = ", np.amax(q_cost_global))
             print("q_cost_global min = ", np.amin(q_cost_global))
 
@@ -221,14 +222,16 @@ class ExaGO_Python:
         # Read in the load dataframes
         start = time.time()
         if real_load_file is None:
-            raise ValueError("The real load file has not been specified.")
+            self.p_load_df = None
+            # raise ValueError("The real load file has not been specified.")
         else:
             p_df = pd.read_csv(real_load_file, index_col=0, parse_dates=True)
             p_df.index = p_df.index.map(lambda t: t.replace(year=year))
             self.p_load_df = p_df
 
         if reactive_load_file is None:
-            raise ValueError("The reactive load file has not been specified.")
+            self.q_load_df = None
+            # raise ValueError("The reactive load file has not been specified.")
         else:
             q_df = pd.read_csv(reactive_load_file, index_col=0, parse_dates=True)
             q_df.index = q_df.index.map(lambda t: t.replace(year=year))
@@ -438,10 +441,11 @@ class ExaGO_Python:
         self.opf_base.read_mat_power_data(self.network_file)
         self.opf_base.setup_ps()
 
-        p_df = self.p_load_df.loc[start_time:stop_time, :]
-        q_df = self.q_load_df.loc[start_time:stop_time, :]
-        # self._set_load(p_df, q_df, self.imat.get_table('bus')) # Uncomment for our load
-        # self._scale_load(self.imat.get_table('bus'), 0.9)
+        ## # Uncomment for custom load
+        # p_df = self.p_load_df.loc[start_time:stop_time, :]
+        # q_df = self.q_load_df.loc[start_time:stop_time, :]
+        # # self._set_load(p_df, q_df, self.imat.get_table('bus')) # Uncomment for our load
+        # # self._scale_load(self.imat.get_table('bus'), 0.9)
 
         wf_df = wind_fcst_df
         self._set_wind_new(self.opf_base, wf_df, self.imat.get_table('gen'), self.gen_type)

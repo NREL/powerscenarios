@@ -549,8 +549,8 @@ class Grid(object):
                 cost_n = pmodel.compute_scenario_cost(random_seed=594081473)
             elif fidelity == "exago_file":
                 # Import the module
-                from powerscenarios.costs.exago import ExaGO_File
-                pricing_scen_ct = 4
+                from powerscenarios.costs.exago.exago_file import ExaGO_File
+                pricing_scen_ct = 15
                 p_bin = p_bin.tail(pricing_scen_ct)
                 pmodel = ExaGO_File(n_scenarios, # Number of scenarios we actually want in our final csv file
                                     n_periods,
@@ -567,8 +567,8 @@ class Grid(object):
                                                       random_seed=594081473)
             elif fidelity == "exago_lib":
                 # Import the module
-                from powerscenarios.costs.exago_lib import ExaGO_Lib
-                pricing_scen_ct = 4
+                from powerscenarios.costs.exago.exago_lib import ExaGO_Lib
+                pricing_scen_ct = 10
                 p_bin = p_bin.tail(pricing_scen_ct)
                 pmodel = ExaGO_Lib(n_scenarios, # Number of scenarios we actually want in our final csv file
                                    n_periods,
