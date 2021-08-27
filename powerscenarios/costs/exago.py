@@ -60,9 +60,10 @@ class ExaGO_File(AbstractCostingFidelity):
         # Data files for creating the file based exago object
         network_file = "/Users/kpanda/UserApps/powerscenarios/data/grid-data/{0}/case_{0}.m".format(self.grid_name)
         grid_aux_file = "/Users/kpanda/UserApps/powerscenarios/data/grid-data/{0}/{0}.aux".format(self.grid_name)
-        load_dir = "/Users/kpanda/UserApps/powerscenarios/data/load-data"
-        real_load_file = "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadP.csv".format(self.grid_name)
-        reactive_load_file = "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadQ.csv".format(self.grid_name)
+
+        load_dir = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data"
+        real_load_file = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadP.csv".format(self.grid_name)
+        reactive_load_file = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadQ.csv".format(self.grid_name)
 
         self.ego = ExaGO(network_file, load_dir, self.grid_name, real_load_file, reactive_load_file)
         self.ego._cleanup() # Lets clean up the file based implementation.
@@ -433,14 +434,16 @@ class ExaGO:
         # Read in the load dataframes
         start = time.time()
         if real_load_file is None:
-            raise ValueError("The real load file has not been specified.")
+            self.p_load_df = None
+            # raise ValueError("The real load file has not been specified.")
         else:
             p_df = pd.read_csv(real_load_file, index_col=0, parse_dates=True)
             p_df.index = p_df.index.map(lambda t: t.replace(year=year))
             self.p_load_df = p_df
 
         if reactive_load_file is None:
-            raise ValueError("The reactive load file has not been specified.")
+            self.q_load_df = None
+            # raise ValueError("The reactive load file has not been specified.")
         else:
             q_df = pd.read_csv(reactive_load_file, index_col=0, parse_dates=True)
             q_df.index = q_df.index.map(lambda t: t.replace(year=year))
@@ -634,9 +637,10 @@ class ExaGO:
         stop_time = start_time
         self._restore_org_gen_table()
 
-        p_df = self.p_load_df.loc[start_time:stop_time, :]
-        q_df = self.q_load_df.loc[start_time:stop_time, :]
-        # self._set_load(p_df, q_df, self.imat.get_table('bus')) # Uncomment for our load
+        ## # Uncomment for custom load
+        # p_df = self.p_load_df.loc[start_time:stop_time, :]
+        # q_df = self.q_load_df.loc[start_time:stop_time, :]
+        # self._set_load(p_df, q_df, self.imat.get_table('bus'))
         # self._scale_load(self.imat.get_table('bus'), 0.9)
 
         wf_df = wind_fcst_df
