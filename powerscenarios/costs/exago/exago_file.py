@@ -14,10 +14,7 @@ import shutil
 from powerscenarios.costs.abstract_fidelity import AbstractCostingFidelity
 from powerscenarios.costs.exago.matpowerhandler import MatpowerHandler
 import os
-#from exago import config
-
 from pathlib import Path
-
 
 exago_options_dir = path.dirname(__file__) # Figure out if there is a more elegant implementation
 
@@ -541,7 +538,7 @@ class ExaGO:
             exago_cmd = [opflow_options_dict['job_launcher'],
                          '-n', '1',
                          self.opflow_executable,
-                         '-options_file', options_file, 
+                         '-options_file', options_file,
                          '-save_output',
                          ]
 
