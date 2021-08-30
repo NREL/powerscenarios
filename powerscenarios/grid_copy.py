@@ -42,7 +42,7 @@ class Grid(object):
 
     # attributes
 
-    blet = "blet"
+    blet = "ble"
     WTK_DATA_PRECISION = 6
 
     # if __repr__ is defined, then __str__ = __repr__ (converse is not true)
@@ -550,7 +550,7 @@ class Grid(object):
             elif fidelity == "exago_file":
                 # Import the module
                 from powerscenarios.costs.exago.exago_file import ExaGO_File
-                pricing_scen_ct = 15
+                pricing_scen_ct = 80
                 p_bin = p_bin.tail(pricing_scen_ct)
                 pmodel = ExaGO_File(n_scenarios, # Number of scenarios we actually want in our final csv file
                                     n_periods,
@@ -586,6 +586,16 @@ class Grid(object):
                                                       random_seed=594081473)
             else:
                 raise NotImplementedError
+
+
+            # shift the cost_n if we have negatives
+            cost_n_orig = cost_n.copy()
+
+            if (cost_n<0).any():
+
+              	print("Negative costs")
+              	cost_n = cost_n_orig - cost_n_orig.min()
+
             # # compute costs of each 1-period scenario
             # cost_1 = scenarios_df["Deviation"].apply(
             #     lambda dev: np.abs(loss_of_load_cost * dev)
@@ -679,4 +689,4 @@ class Grid(object):
             #     # add each scenario to the multi-indexed df to return
 
             multi_scenarios_df.loc[(timestamps[1], sample_i + 1,)] = scenario_df.values
-        return multi_scenarios_df, weights_df
+        return multi_scenarios_df, weights_df, p_bin, cost_n_orig

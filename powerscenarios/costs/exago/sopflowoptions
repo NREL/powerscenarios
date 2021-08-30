@@ -1,5 +1,8 @@
--netfile /Users/kpanda/UserApps/powerscenarios/notebooks/scen_ACTIVSg200.m
--scenfile /Users/kpanda/UserApps/powerscenarios/notebooks/scenarios_ACTIVSg200.csv
+-netfile /Users/isatkaus/projects/ecp/public-github/powerscenarios/notebooks/dev/scen_ACTIVSg200.m
+-scenfile /Users/isatkaus/projects/ecp/public-github/powerscenarios/notebooks/dev/scenarios_ACTIVSg200.csv
+#-netfile /Users/kpanda/UserApps/powerscenarios/notebooks/scen_ACTIVSg200.m
+#-scenfile /Users/kpanda/UserApps/powerscenarios/notebooks/scenarios_ACTIVSg200.csv
+
 -save_output
 -sopflow_solver EMPAR
 
@@ -47,9 +50,9 @@
 
 # Slacks
 -opflow_include_loadloss_variables 1
--opflow_loadloss_penalty 833.33
+-opflow_loadloss_penalty 6833.33
 -opflow_include_powerimbalance_variables 1
--opflow_powerimbalance_penalty 833.33
+-opflow_powerimbalance_penalty 6833.33
 # -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
 
 #-------------------------

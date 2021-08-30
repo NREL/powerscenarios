@@ -1,4 +1,5 @@
--netfile /Users/kpanda/UserApps/powerscenarios/notebooks/case_ACTIVSg200.m
+-netfile /Users/isatkaus/projects/ecp/public-github/powerscenarios/notebooks/dev/case_ACTIVSg200.m
+# -netfile /Users/kpanda/UserApps/powerscenarios/notebooks/case_ACTIVSg200.m
 -save_output
 
 # Select Solver (IPOPT,TAO, HIOP)
@@ -10,9 +11,9 @@
 
 # Slacks
 -opflow_include_loadloss_variables 1
--opflow_loadloss_penalty 833.33
+-opflow_loadloss_penalty 6833.33
 -opflow_include_powerimbalance_variables 1
--opflow_powerimbalance_penalty 833.33
+-opflow_powerimbalance_penalty 6833.33
 # -opflow_genbusvoltage VARIABLE_WITHIN_BOUNDS
 
 #-------------------------

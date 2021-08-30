@@ -14,7 +14,10 @@ import shutil
 from powerscenarios.costs.abstract_fidelity import AbstractCostingFidelity
 from powerscenarios.costs.exago.matpowerhandler import MatpowerHandler
 import os
-from exago import config
+#from exago import config
+
+from pathlib import Path
+
 
 exago_options_dir = path.dirname(__file__) # Figure out if there is a more elegant implementation
 
@@ -61,7 +64,20 @@ class ExaGO_File(AbstractCostingFidelity):
 
     def _create_ego_object(self):
         # Data files for creating the file based exago object
-        network_file = "/Users/kpanda/UserApps/powerscenarios/data/grid-data/{0}/case_{0}.m".format(self.grid_name)
+        base_dir = Path(__file__).parents[3]
+        grid_data_dir = os.path.join(base_dir,"data","grid-data")
+        #print("base_dir: {}".format(base_dir))
+        #print("grid_data_dir: {}".format(grid_data_dir))
+
+        network_file = os.path.join(grid_data_dir,"{0}/case_{0}.m".format(self.grid_name))
+        grid_aux_file =os.path.join(grid_data_dir,"{0}/{0}.aux".format(self.grid_name))
+        #print("network_file: {}".format(network_file))
+        #print("grid_aux_file: {}".format(grid_aux_file))
+
+        network_file = os.path.join(grid_data_dir,"{0}/case_{0}.m".format(self.grid_name))
+        #grid_aux_file =os.path.join(grid_data_dir,"{0}/{0}.aux".format(self.grid_name))
+
+        #network_file = "/Users/kpanda/UserApps/powerscenarios/data/grid-data/{0}/case_{0}.m".format(self.grid_name)
 
         load_dir = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data"
         real_load_file = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadP.csv".format(self.grid_name)
@@ -191,6 +207,7 @@ class ExaGO_File(AbstractCostingFidelity):
         else:
             pass
         print("**** ExaGO Command ****\n", exago_cmd, flush=True)
+        print("blet")
         exago_res = subprocess.run(exago_cmd,
                                    capture_output=True,
                                    text=True)
@@ -519,11 +536,15 @@ class ExaGO:
             #              'ACPF',
             #              ]
             options_file = os.path.join(self.options_dir, "opflowoptions")
+            print("options_file: {}".format(options_file))
+
             exago_cmd = [opflow_options_dict['job_launcher'],
                          '-n', '1',
                          self.opflow_executable,
-                         '-options_file', options_file
+                         '-options_file', options_file, 
+                         '-save_output',
                          ]
+
 
         print("**** ExaGO Command ****\n", exago_cmd, flush=True)
         exago_res = subprocess.run(exago_cmd, capture_output=True, text=True)
@@ -533,7 +554,10 @@ class ExaGO:
 
         t3 = time.time()
 
+        print("output_path: {}".format(opflow_options_dict['output_path']))
+
         result = MatpowerHandler(opflow_options_dict['output_path']) # Not properly utilized because of ExaGO
+
         set_points = result.get_table('gen')
 
         t4 = time.time()
