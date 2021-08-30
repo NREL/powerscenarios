@@ -23,6 +23,7 @@ class ExaGO_File(AbstractCostingFidelity):
     This class contains the wrapper for calling OPFLOW from within Powerscenaios
     """
     def __init__(self,
+                 grid_name,
                  n_scenarios, # Number of scenarios we actually want in our final csv file
                  n_periods,
                  loss_of_load_cost,
@@ -43,7 +44,7 @@ class ExaGO_File(AbstractCostingFidelity):
                                          total_power_t0,
                                          WTK_DATA_PRECISION=6)
 
-        self.grid_name = "ACTIVSg200"
+        self.grid_name = grid_name # "ACTIVSg200"
         self.opflow_options_dict = {'job_launcher' : 'mpirun',
                                    'opflow_solver' : 'IPOPT',
                                    'matpower_file' : "{0}.m".format(self.grid_name),

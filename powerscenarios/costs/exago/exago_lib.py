@@ -16,6 +16,7 @@ from powerscenarios.costs.abstract_fidelity import AbstractCostingFidelity
 from powerscenarios.costs.exago.matpowerhandler import MatpowerHandler
 from exago.opflow import OPFLOW
 import os
+from pathlib import Path
 from exago import config
 
 class ExaGO_Lib(AbstractCostingFidelity):
@@ -23,6 +24,7 @@ class ExaGO_Lib(AbstractCostingFidelity):
     This class contains the wrapper for calling OPFLOW from within Powerscenaios
     """
     def __init__(self,
+                 grid_name,
                  n_scenarios, # Number of scenarios we actually want in our final csv file
                  n_periods,
                  loss_of_load_cost,
@@ -43,7 +45,7 @@ class ExaGO_Lib(AbstractCostingFidelity):
                                          total_power_t0,
                                          WTK_DATA_PRECISION=6)
 
-        self.grid_name = "ACTIVSg200"
+        self.grid_name = grid_name # "ACTIVSg200"
         self.opflow_options_dict = {'opflow_solver' : 'IPOPT',
                                     'matpower_file' : "{0}.m".format(self.grid_name),
                                    }
@@ -57,7 +59,19 @@ class ExaGO_Lib(AbstractCostingFidelity):
     def _create_ego_object(self,
                            network_file=None):
         # Data files for creating the file based exago object
-        network_file = "/Users/kpanda/UserApps/powerscenarios/data/grid-data/{0}/case_{0}.m".format(self.grid_name)
+        # Data files for creating the file based exago object
+        base_dir = Path(__file__).parents[3]
+        grid_data_dir = os.path.join(base_dir,"data","grid-data")
+        #print("base_dir: {}".format(base_dir))
+        #print("grid_data_dir: {}".format(grid_data_dir))
+
+        network_file = os.path.join(grid_data_dir,"{0}/case_{0}.m".format(self.grid_name))
+        grid_aux_file =os.path.join(grid_data_dir,"{0}/{0}.aux".format(self.grid_name))
+        #print("network_file: {}".format(network_file))
+        #print("grid_aux_file: {}".format(grid_aux_file))
+
+        network_file = os.path.join(grid_data_dir,"{0}/case_{0}.m".format(self.grid_name))
+        # network_file = "/Users/kpanda/UserApps/powerscenarios/data/grid-data/{0}/case_{0}.m".format(self.grid_name)
         load_dir = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data"
         real_load_file = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadP.csv".format(self.grid_name)
         reactive_load_file = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadQ.csv".format(self.grid_name)
@@ -139,10 +153,11 @@ class ExaGO_Lib(AbstractCostingFidelity):
 
         q_cost_local = np.zeros(nscen_local_arr[my_mpi_rank])
         local_opf_scen_dict = {}
+        print("my_mpi_rank = ", my_mpi_rank, ", idx_offset = ", idx_offset)
         # time_offset = idx_offset*step
         # ts = wind_scen_df.index[0] + pd.Timedelta(minutes=time_offset)
         for i in range(nscen_local_arr[my_mpi_rank]):
-            ts = wind_scen_df.index[i] # Will not work for MPI
+            ts = wind_scen_df.index[idx_offset + i] # Will not work for MPI
             local_opf_scen_dict[i] = OPFLOW()
             opf_object = local_opf_scen_dict[i] # For convenience as of now
             opf_object.read_mat_power_data(self.ego.network_file)
@@ -167,19 +182,24 @@ class ExaGO_Lib(AbstractCostingFidelity):
 
         q_cost_local -= base_cost
 
-        if my_mpi_rank == 0:
-            q_cost_global = np.empty(nscen_global, dtype=float)
-        else:
-            q_cost_global = None
+        # if my_mpi_rank == 0:
+        #     q_cost_global = np.empty(nscen_global, dtype=float)
+        # else:
+        #     q_cost_global = None
+        #     cost_n = None
+        q_cost_global = np.empty(nscen_global, dtype=float)
 
         self.ego.comm.Barrier()
-        self.ego.comm.Gatherv(sendbuf=q_cost_local,
-                          recvbuf=(q_cost_global, nscen_local_arr),
-                          root=0)
+        # self.ego.comm.Gatherv(sendbuf=q_cost_local,
+        #                   recvbuf=(q_cost_global, nscen_local_arr),
+        #                   root=0)
+        self.ego.comm.Allgatherv(sendbuf=q_cost_local,
+                                 recvbuf=(q_cost_global, nscen_local_arr))
+        cost_n = pd.Series(index=wind_scen_df.index, data=q_cost_global)
 
         if my_mpi_rank == 0:
             # Zip the numpy array into the timeseries
-            cost_n = pd.Series(index=wind_scen_df.index, data=q_cost_global)
+            # cost_n = pd.Series(index=wind_scen_df.index, data=q_cost_global)
             print("q_cost_global = ", repr(q_cost_global))
             # np.savetxt("cost_lib.txt", q_cost_global)
             print("q_cost_global max = ", np.amax(q_cost_global))
