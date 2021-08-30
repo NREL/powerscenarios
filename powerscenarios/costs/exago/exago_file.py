@@ -16,7 +16,7 @@ from powerscenarios.costs.exago.matpowerhandler import MatpowerHandler
 import os
 from exago import config
 
-exago_options_dir = path.dirname(__file__)
+exago_options_dir = path.dirname(__file__) # Figure out if there is a more elegant implementation
 
 class ExaGO_File(AbstractCostingFidelity):
     """
