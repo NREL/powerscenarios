@@ -8,6 +8,12 @@ import sys
 import os
 from powerscenarios.costs.checkmark import CheckmarkModel
 
+# Import the module
+from powerscenarios.costs.exago.exago_lib import ExaGO_Lib
+# from mpi4py import MPI
+# from exago.opflow import OPFLOW
+# from exago import config
+
 logging.basicConfig()
 
 # do this before importing pywtk, so that WIND_MET_NC_DIR and WIND_FCST_DIR are set correctly
@@ -550,7 +556,8 @@ class Grid(object):
             elif fidelity == "exago_file":
                 # Import the module
                 from powerscenarios.costs.exago.exago_file import ExaGO_File
-                pricing_scen_ct = 80
+
+                pricing_scen_ct = kwargs["pricing_scen_ct"]
                 p_bin = p_bin.tail(pricing_scen_ct)
                 pmodel = ExaGO_File(self.name,
                                     n_scenarios, # Number of scenarios we actually want in our final csv file
@@ -569,7 +576,12 @@ class Grid(object):
             elif fidelity == "exago_lib":
                 # Import the module
                 from powerscenarios.costs.exago.exago_lib import ExaGO_Lib
-                pricing_scen_ct = 100
+                from mpi4py import MPI
+                from exago.opflow import OPFLOW
+                from exago import config
+
+                pricing_scen_ct = kwargs["pricing_scen_ct"]
+                mpi_comm = kwargs["mpi_comm"]
                 p_bin = p_bin.tail(pricing_scen_ct)
                 pmodel = ExaGO_Lib(self.name,
                                    n_scenarios, # Number of scenarios we actually want in our final csv file
@@ -579,13 +591,17 @@ class Grid(object):
                                    scenarios_df.loc[p_bin.index],
                                    p_bin,
                                    total_power_t0,
-                                   nscen_priced=pricing_scen_ct)
+                                   nscen_priced=pricing_scen_ct,
+                                   mpi_comm=mpi_comm)
                 scenarios_df_copy = scenarios_df.drop(columns=["TotalPower", "Deviation"])
 
                 cost_n = pmodel.compute_scenario_cost(actuals_df,
                                                       scenarios_df_copy.loc[p_bin.index],
                                                       timestamp,
                                                       random_seed=594081473)
+                # for i in range(mpi_comm.Get_size()):
+                #     if mpi_comm.Get_rank() == i:
+                #         print("rank = ", i)
             else:
                 raise NotImplementedError
 
