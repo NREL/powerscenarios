@@ -191,9 +191,9 @@ def main():
 
             # read instead of make_tables
             filename = "{}_actuals_df.h5".format(grid_name)
-            grid.actuals = pd.read_hdf(os.path.join(table_dir,filename))
+            grid.actuals = pd.read_hdf(os.path.join(tables_dir,filename))
             filename = "{}_scenarios_df.h5".format(grid_name)
-            grid.scenarios = pd.read_hdf(os.path.join(table_dir,filename))
+            grid.scenarios = pd.read_hdf(os.path.join(tables_dir,filename))
 
         # for actuals, make year you want
         grid.actuals.index = grid.actuals.index.map(lambda t: t.replace(year=2020))
