@@ -325,6 +325,9 @@ def main():
         logger.info("\n\n rank {} has new_s_df:".format(rank))
         logger.info(new_s_df)
 
+        logger.info("Priced {} scenarios".format(len(new_s_df) ) )
+        t1 = time.time()
+        logger.info("Ellapsed time: {} s".format(t1-t0))
         
         ## save output to hdf        
         filename = "{}_new_s_df.h5".format(grid_name)
@@ -338,9 +341,6 @@ def main():
 
 
 
-        logger.info("Priced {} scenarios".format(len(new_s_df) ) )
-        t1 = time.time()
-        logger.info("Ellapsed time: {} s".format(t1-t0))
 
         # flatten chunks back to one list
     #     new_file_names = [file_name for chunk in new_file_names_chunks for file_name in chunk]
