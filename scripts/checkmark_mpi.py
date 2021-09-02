@@ -209,9 +209,9 @@ def main():
 
         ## for TESTING just take a smaller scenario df
         ## first 10 (all positive deviations)
-        s_df = grid.scenarios.head(100).copy()
+        #s_df = grid.scenarios.head(100).copy()
         #s_df = grid.scenarios.head(100000).copy()
-        #s_df = grid.scenarios.copy()
+        s_df = grid.scenarios.copy()
         ## ten scenarios with first 5 positive and last 5 negative deviations
 
         # s_df = grid.scenarios.loc[
