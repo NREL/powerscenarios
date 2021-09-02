@@ -5,7 +5,7 @@ input:
     grid_dir: ../data/grid-data/
     ## read tables from h5 files (previously aggregated with make_tables)
     read_tables: True
-    table_dir: ./
+    tables_dir: ../data/tables-data/
 
 
 # grid name: RTS, ACTIVSg200, ACTIVSg2000, ACTIVSg10k, ... 

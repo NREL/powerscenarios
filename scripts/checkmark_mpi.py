@@ -178,12 +178,12 @@ def main():
 
         ## if read_tables then use h5 wind_sites/actuals/scenarios tables
         if config["input"]["read_tables"]:
-            table_dir = os.path.expandvars(config["input"]["table_dir"])
+            tables_dir = os.path.expandvars(config["input"]["tables_dir"])
 
 
             # read instead of retrieve_wind_sites
             filename = "{}_wind_sites_df.h5".format(grid_name)
-            grid.wind_sites = pd.read_hdf(os.path.join(table_dir,filename))
+            grid.wind_sites = pd.read_hdf(os.path.join(tables_dir,filename))
             #print("\n wind sites")
             #print(grid.wind_sites.head())
             logger.debug("\n wind sites")
