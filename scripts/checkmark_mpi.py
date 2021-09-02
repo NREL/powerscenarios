@@ -23,7 +23,7 @@ import yaml
 from powerscenarios.parser import Parser
 
 # from powerscenarios.grid import Grid
-from powerscenarios.grid_copy import Grid
+from powerscenarios.grid_copy2 import Grid
 
 def parse_args():
     """Parse command line arguments."""
