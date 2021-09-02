@@ -10,7 +10,7 @@ input:
 
 # grid name: RTS, ACTIVSg200, ACTIVSg2000, ACTIVSg10k, ... 
 grid:
-    name: ACTIVSg2000 
+    name: ACTIVSg200 
 
 # harcoded for now and not used
 tables:
