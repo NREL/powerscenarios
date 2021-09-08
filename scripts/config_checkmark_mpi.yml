@@ -1,0 +1,51 @@
+# grid data, i.e. network description data 
+# download as needed from 
+# https://electricgrids.engr.tamu.edu/electric-grid-test-cases/
+input:
+    grid_dir: ../data/grid-data/
+    ## read tables from h5 files (previously aggregated with make_tables)
+    read_tables: True
+    tables_dir: ../data/tables-data/
+
+
+# grid name: RTS, ACTIVSg200, ACTIVSg2000, ACTIVSg10k, ... 
+grid:
+    name: ACTIVSg200 
+
+# harcoded for now and not used
+tables:
+    actuals_start: 2007-01-01 00:00:00
+    actuals_end: 2007-12-31 23:55:00
+    scenarios_start: 2008-01-01 00:00:00 
+    scenarios_end: 2013-12-31 23:55:00 
+
+# (optional) change wind power peretration percentage on the grid 
+wind_penetration:
+    change: False 
+    new_value: 30.
+
+# parameters for generated scenarios 
+scenario:
+    start: 2007-07-01 00:00:00
+    end: 2007-07-01 00:05:00 
+    # sampling methods available: monte carlo,  importance
+    sampling_method: monte carlo 
+    n_scenarios: 3 
+    n_periods: 2 
+
+## ---end not used ---
+
+# output of actuals, scenarios, and weights
+output:
+    dir: ./output 
+    df_format: original 
+    # file formats available: csv, aux
+    file_format: aux 
+
+
+# other flags
+# convert solar to wind in RTS grid case?
+RTS_solar2wind: True
+
+
+

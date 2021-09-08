@@ -166,6 +166,14 @@ class ExaGO_Lib(AbstractCostingFidelity):
             opf_object = local_opf_scen_dict[i] # For convenience as of now
             opf_object.dont_finalize()
             opf_object.read_mat_power_data(self.ego.network_file)
+            opf_object.set_include_loadloss(True)
+            opf_object.set_loadloss_penalty(833)
+            opf_object.set_include_powerimbalance(True)
+            opf_object.set_powerimbalance_penalty(999)
+            opf_object.set_model('POWER_BALANCE_POLAR')
+            opf_object.set_solver('IPOPT')
+            opf_object.set_initialization('ACPF')
+            opf_object.set_genbusvoltage('VARIABLE_WITHIN_BOUNDS')
             opf_object.setup_ps()
 
             # Constrain the thermal generation for the second stage
@@ -495,6 +503,12 @@ class ExaGO_Python:
         self.opf_base = OPFLOW()
         self.opf_base.dont_finalize()
         self.opf_base.read_mat_power_data(self.network_file)
+        self.opf_base.set_include_loadloss(False)
+        self.opf_base.set_include_powerimbalance(False)
+        self.opf_base.set_model('POWER_BALANCE_POLAR')
+        self.opf_base.set_solver('IPOPT')
+        self.opf_base.set_initialization('ACPF')
+        # self.opf_base.set_genbusvoltage('VARIABLE_WITHIN_BOUNDS')
         self.opf_base.setup_ps()
 
         ## # Uncomment for custom load
