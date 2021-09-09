@@ -221,7 +221,9 @@ def main():
         # ].copy()
 
 
-        ## drop Total power and Deviation
+        ## drop Total power and Deviation (but remember thsese, will need later for power conditioning)
+        s_df_Deviation = s_df["Deviation"].copy()
+        s_df_TotalPower = s_df["TotalPower"].copy()
         s_df.drop(["Deviation", "TotalPower"], axis=1, inplace=True)
 
         ## add Cost placer
@@ -320,24 +322,150 @@ def main():
 
         ## new_s_df will not be sorted by IssueTime
         new_s_df.set_index("IssueTime", inplace=True)
+        ## make index datetime
+        new_s_df.index = pd.to_datetime(new_s_df.index)
         new_s_df.sort_index(inplace=True)
 
-        logger.info("\n\n rank {} has new_s_df:".format(rank))
-        logger.info(new_s_df)
+        ## add back Deviation and TotalPower
+        new_s_df["Deviation"] = s_df_Deviation
+        new_s_df["TotalPower"] = s_df_TotalPower
 
-        logger.info("Priced {} scenarios".format(len(new_s_df) ) )
-        t1 = time.time()
-        logger.info("Ellapsed time: {} s".format(t1-t0))
+        #### make grid.scenarios to be the new dataframe wirh mpi computed costs
+        #### add cost_1 to grid.scenarios
+        grid.scenarios = new_s_df
+
         
-        ## save output to hdf        
-        filename = "{}_new_s_df.h5".format(grid_name)
-        new_s_df.to_hdf(os.path.join(output_dir,filename),'MW',  mode='w')
-        logger.info("saving output to {}".format(os.path.join(output_dir,filename)))
 
-        ## save output to csv        
-        filename = "{}_new_s_df.csv".format(grid_name)
-        new_s_df.to_csv(os.path.join(output_dir,filename))
-        logger.info("saving output to {}".format(os.path.join(output_dir,filename)))
+
+
+        # ##### for debugging purposes record what you got
+        # logger.info("\n\n rank {} has new_s_df:".format(rank))
+        # logger.info(new_s_df)
+
+        # logger.info("Priced {} scenarios".format(len(new_s_df) ) )
+        # t1 = time.time()
+        # logger.info("Ellapsed time: {} s".format(t1-t0))
+        
+        # ## save output to hdf        
+        # filename = "{}_new_s_df.h5".format(grid_name)
+        # new_s_df.to_hdf(os.path.join(output_dir,filename),'MW',  mode='w')
+        # logger.info("saving output to {}".format(os.path.join(output_dir,filename)))
+
+        # ## save output to csv        
+        # filename = "{}_new_s_df.csv".format(grid_name)
+        # new_s_df.to_csv(os.path.join(output_dir,filename))
+        # logger.info("saving output to {}".format(os.path.join(output_dir,filename)))
+
+        ####### generate scenarios
+        # other parameters
+        #sim_timestamp = pd.Timestamp(config["scenario"]["start"])
+        sim_timestamp = pd.Timestamp("2020-08-01 00:15:00+0000", tz="UTC")
+
+        logger.info("\nsim_timestamp = {}".format(sim_timestamp))
+
+        sampling_method = config["scenario"]["sampling_method"]
+        fidelity = config["scenario"]["fidelity"]
+        n_scenarios = config["scenario"]["n_scenarios"] 
+        n_periods =  config["scenario"]["n_periods"]
+
+
+        # sampling_method = "importance" 
+        # fidelity = "checkmark"
+        # n_scenarios = 3 
+        # n_periods = 1
+
+
+
+        # random_seed = np.random.randint(2 ** 31 - 1)
+        random_seed = 25
+
+
+        scenarios_df, weights_df, p_bin, cost_n = grid.generate_wind_scenarios2(
+            sim_timestamp,
+            power_quantiles=[0.0, 0.1, 0.9, 1.0],
+            sampling_method=sampling_method,
+            fidelity=fidelity,
+            n_scenarios=n_scenarios,
+            n_periods=n_periods,
+            # random_seed=6,
+            random_seed=random_seed,
+            output_format=0,
+        )
+
+
+        ##### save generated dataframes
+        save_dir = config["output"]["dir"]
+        actuals_df = (
+           grid.actuals.loc[sim_timestamp:sim_timestamp].drop("TotalPower", axis=1).copy()
+        )
+
+        if config["output"]["df_format"] == "Shri":
+
+            # add t0 actual
+            actuals_df.loc[sim_timestamp - pd.Timedelta("5min")] = grid.actuals.loc[
+                    sim_timestamp - pd.Timedelta("5min")
+                ]
+            actuals_df.sort_index(inplace=True)
+            ## save actuals_df
+            filename = "actuals_{}.csv".format(grid_name)
+            actuals_df.to_csv(os.path.join(save_dir, filename))
+
+            df = scenarios_df.loc[sim_timestamp]
+            # drop period_timestamp multi-index level
+            mindex = df.index
+            df.index = mindex.droplevel(1)
+
+            ## add weights column
+            df["weight"] = weights_df.loc[sim_timestamp]
+
+            ## save scenarios with weights
+            filename = "{}_scenarios_{}.csv".format(n_scenarios, grid_name)
+            df.to_csv(os.path.join(save_dir, filename))
+       
+        elif config["output"]["df_format"] == "original":
+
+            if config["output"]["file_format"] == "csv":
+
+                ## add t0 actual
+                actuals_df.loc[sim_timestamp - pd.Timedelta("5min")] = grid.actuals.loc[
+                        sim_timestamp - pd.Timedelta("5min")
+                    ]
+                actuals_df.sort_index(inplace=True)
+
+                ## save actuals_df
+                filename = "orig_actuals_{}.csv".format(grid_name)
+                actuals_df.to_csv(os.path.join(save_dir, filename))
+
+                ## save scenarios
+                filename = "{}orig_scenarios_{}.csv".format(n_scenarios, grid_name)
+                scenarios_df.to_csv(os.path.join(save_dir, filename))
+
+                ## save weights
+                filename = "{}orig_weights_{}.csv".format(n_scenarios, grid_name)
+                weights_df.to_csv(os.path.join(save_dir, filename))
+
+
+
+            # #### todo: problem with multiindex when saving to h5
+            # elif config["output"]["file_format"] == "h5":
+
+            #     ## add t0 actual
+            #     actuals_df.loc[sim_timestamp - pd.Timedelta("5min")] = grid.actuals.loc[
+            #             sim_timestamp - pd.Timedelta("5min")
+            #         ]
+            #     actuals_df.sort_index(inplace=True)
+
+            #     ## save actuals_df
+            #     filename = "orig_actuals_{}.h5".format(grid_name)
+            #     actuals_df.to_hdf(os.path.join(save_dir, filename),"MW", mode="w")
+
+            #     ## save scenarios
+            #     filename = "{}orig_scenarios_{}.h5".format(n_scenarios, grid_name)
+            #     scenarios_df.to_hdf(os.path.join(save_dir, filename),"MW", mode="w")
+
+            #     ## save weights
+            #     filename = "{}orig_weights_{}.h5".format(n_scenarios, grid_name)
+            #     weights_df.to_hdf(os.path.join(save_dir, filename),"MW", mode="w")
 
 
 
