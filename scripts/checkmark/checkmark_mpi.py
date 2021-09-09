@@ -53,7 +53,7 @@ def config_logging(verbose, output_dir):
     logger = logging.getLogger(__name__)
     logger.setLevel(log_level)
     # define file handler and set formatter
-    file_handler = logging.FileHandler(os.path.join(output_dir, "log_simple_mpi.log"))
+    file_handler = logging.FileHandler(os.path.join(output_dir, "log_checkmark_mpi.log"))
     formatter = logging.Formatter(
         "%(asctime)s : %(levelname)s : %(name)s : %(message)s"
     )
