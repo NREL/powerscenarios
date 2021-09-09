@@ -2,10 +2,10 @@
 # download as needed from 
 # https://electricgrids.engr.tamu.edu/electric-grid-test-cases/
 input:
-    grid_dir: ../data/grid-data/
+    grid_dir: /Users/isatkaus/projects/ecp/public-github/powerscenarios/data/grid-data/
     ## read tables from h5 files (previously aggregated with make_tables)
     read_tables: True
-    tables_dir: ../data/tables-data/
+    tables_dir: /Users/isatkaus/projects/ecp/public-github/powerscenarios/data/tables-data/
 
 
 # grid name: RTS, ACTIVSg200, ACTIVSg2000, ACTIVSg10k, ... 
