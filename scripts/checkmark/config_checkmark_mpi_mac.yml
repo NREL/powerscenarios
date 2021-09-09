@@ -46,7 +46,7 @@ output:
     ## how to save: original, Shri,
     df_format: Shri 
     # file formats available: csv, aux, h5 (does not work for multiindex yet..)
-    file_format: h5 
+    file_format: csv 
 
 
 # other flags
