@@ -176,10 +176,10 @@ def main():
 
         ## if read_tables then use h5 wind_sites/actuals/scenarios tables
         if config["input"]["read_tables"]:
+            tables_dir = os.path.expandvars(config["input"]["tables_dir"])
             logger.info(
                 "\n\nreading in tables(wind sites, actuals, scenarios) from h5 files in: {}".format(tables_dir)
             )
-            tables_dir = os.path.expandvars(config["input"]["tables_dir"])
 
             # read instead of retrieve_wind_sites
             filename = "{}_wind_sites_df.h5".format(grid_name)
