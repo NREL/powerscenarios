@@ -65,10 +65,10 @@ def config_logging(verbose, output_dir):
     # add file handler to logger
     logger.addHandler(file_handler)
 
-    ### console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
+    # ### console handler
+    # console_handler = logging.StreamHandler()
+    # console_handler.setFormatter(formatter)
+    # logger.addHandler(console_handler)
 
     return logger
 
