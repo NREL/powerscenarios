@@ -177,7 +177,7 @@ def main():
         ## if read_tables then use h5 wind_sites/actuals/scenarios tables
         if config["input"]["read_tables"]:
             logger.info(
-                "\n\nreading in tables(wind sites, actuals, scenarios) from h5 files in:{tables_dir}".format()
+                "\n\nreading in tables(wind sites, actuals, scenarios) from h5 files in: {}".format(tables_dir)
             )
             tables_dir = os.path.expandvars(config["input"]["tables_dir"])
 
@@ -334,13 +334,14 @@ def main():
         #### add cost_1 to grid.scenarios
         grid.scenarios = new_s_df
 
+        t1 = time.time()
+        logger.info("Ellapsed scenario pricing time: {} s".format(t1-t0))
+
         # ##### for debugging purposes record what you got
         # logger.info("\n\n rank {} has new_s_df:".format(rank))
         # logger.info(new_s_df)
 
         # logger.info("Priced {} scenarios".format(len(new_s_df) ) )
-        # t1 = time.time()
-        # logger.info("Ellapsed time: {} s".format(t1-t0))
 
         # ## save output to hdf
         # filename = "{}_new_s_df.h5".format(grid_name)
@@ -393,6 +394,9 @@ def main():
 
         ##### save generated dataframes
         save_dir = config["output"]["dir"]
+        logger.info("\n\nsaving output to {}".format(save_dir))
+
+
         actuals_df = (
             grid.actuals.loc[sim_timestamp:sim_timestamp]
             .drop("TotalPower", axis=1)
