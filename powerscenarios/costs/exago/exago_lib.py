@@ -169,7 +169,7 @@ class ExaGO_Lib(AbstractCostingFidelity):
             opf_object.set_include_loadloss(True)
             opf_object.set_loadloss_penalty(833)
             opf_object.set_include_powerimbalance(True)
-            opf_object.set_powerimbalance_penalty(999)
+            opf_object.set_powerimbalance_penalty(833)
             opf_object.set_model('POWER_BALANCE_POLAR')
             opf_object.set_solver('IPOPT')
             opf_object.set_initialization('ACPF')

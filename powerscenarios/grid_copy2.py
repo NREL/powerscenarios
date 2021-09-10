@@ -694,3 +694,290 @@ class Grid(object):
 
             multi_scenarios_df.loc[(timestamps[1], sample_i + 1,)] = scenario_df.values
         return multi_scenarios_df, weights_df, p_bin, cost_n_orig
+
+
+##### new method version that already assumes "cost" column in the scenarios_df for importance sampling
+##### for multiperiod assumes that cost is cost_1 i.e. sigle period cost, and computes rolling sum if asked for more than 1 period  
+
+    def generate_wind_scenarios2(
+        self,
+        timestamp,
+        power_quantiles=[0.0, 0.1, 0.9, 1.0],
+        sampling_method="monte carlo",
+        fidelity="checkmark",
+        n_scenarios=5,
+        n_periods=1,
+        random_seed=25,
+        output_format=0,
+        **kwargs,
+    ):
+        """Method to generate scenarios
+            Required Args:
+                timestamp - (pd.Timestamp)
+                power_quantiles - (list) quantiles for power conditioning
+                sampling_method - (string) either "importance" or "monte carlo"
+                n_scenarios - (integer) number of scenarios to draw
+                n_periods - (integer) number of periods for each scenario
+
+            Returns:
+                scenarios_df - (pd.DataFrame) multi-indexed DataFrame with all scenarios
+
+        """
+
+        actuals_df = self.actuals
+        scenarios_df = self.scenarios
+
+        # print("\ngrid.actuals")
+        # print(actuals_df.head())
+
+        # print("\ngrid.scenarios")
+        # print(scenarios_df.head())
+
+        # print("\ngrid.scenarios.index:")
+        # print(scenarios_df.index)
+
+        # print("\ngrid.scenarios.info:")
+        # print(scenarios_df.info())
+
+        if not "Cost" in scenarios_df.columns:
+            print("scenarios_df has no Cost column!!! Add Cost column for importance sampling.")
+            return
+
+
+        #         # TODO: basic checks:
+        #         # still needs work to Raise ValueExceptions
+        #         for timestamp in timestamps:
+        #             # type
+        #             if type(timestamp) != pd._libs.tslibs.timestamps.Timestamp:
+        #                 print("timestamps must be pandas.Timestamp type")
+        #                 return
+
+        #         # t0 and t1 must be in actuals.index
+        #         if not (timestamps[0] in actuals_df.index) or not (
+        #             timestamps[1] in actuals_df.index
+        #         ):
+        #             print(
+        #                 "timestamps[0] and timestamps[1] must be between {} and {}".format(
+        #                     actuals_df.index.min(), actuals_df.index.max()
+        #                 )
+        #             )
+        #             return
+
+        #         # check if t0 < t1
+        #         if not (timestamps[0] < timestamps[1]):
+        #             print("timestamps[0] must be < timestamps[1]")
+        #             return
+        # all needed timestamps
+
+        # all needed timestamps
+        timestamps = pd.date_range(
+            start=timestamp - pd.Timedelta("5min"), periods=n_periods + 1, freq="5min"
+        )
+        # print(timestamps)
+        # power at t0
+        total_power_t0 = actuals_df.loc[timestamps[0]]["TotalPower"]
+        # total_power_t0
+
+        # power conditioning
+        # .iloc[:-n_periods] is so that we can find consecutive timestamps for multiperiod scenarios
+        power_bins = pd.qcut(
+            scenarios_df["TotalPower"].iloc[:-n_periods], q=power_quantiles,
+        )
+        # power_bins
+
+        # which power bin does it belong to?
+        # for power_bin in power_bins.unique():
+        for power_bin in power_bins.cat.categories:
+            if total_power_t0 in power_bin:
+                break
+        # power_bin
+        # wanted power bin
+        p_bin = power_bins.loc[power_bins == power_bin]
+
+        if sampling_method == "monte carlo":
+            # sample of n_scenarios timestamps that are in wanted bin
+            sample_timestamps = p_bin.sample(n_scenarios, random_state=random_seed).index
+            # #     # df of weights to return (all ones, redundant, but have to return something)
+            weights_df = pd.DataFrame(index=[timestamps[1]], columns=range(1, n_scenarios + 1))
+            weights_df.loc[timestamps[1]] = dict(
+                zip(range(1, n_scenarios + 1), np.ones(n_scenarios))
+            )
+
+
+        elif sampling_method == "importance":
+
+            # importance sample from an appropriate power bin
+            # cost of MW per 5-min period
+            loss_of_load_cost = 10000 / 12.0
+            spilled_wind_cost = 0.001
+
+
+            if fidelity == "checkmark":
+                # pmodel = CheckmarkModel(n_scenarios, # Number of scenarios we actually want in our final csv file
+                #                         n_periods,
+                #                         loss_of_load_cost,
+                #                         spilled_wind_cost,
+                #                         scenarios_df,
+                #                         p_bin,
+                #                         total_power_t0)
+                # cost_n = pmodel.compute_scenario_cost(random_seed=594081473)
+
+                cost_1 = scenarios_df.loc[p_bin.index, "Cost"]
+                # based on n_periods, compute cost_n, rolling window sum (if n_periods is 1, this will be the same as cost_1)
+                cost_n = cost_1.rolling(n_periods).sum().shift(-(n_periods - 1))
+                # rolling window operation looses digits, have to round (so we don't have negative values when adding zeroes)
+                cost_n = cost_n.round(self.WTK_DATA_PRECISION)                
+
+
+            elif fidelity == "exago_file":
+                # Import the module
+                from powerscenarios.costs.exago.exago_file import ExaGO_File
+                pricing_scen_ct = 20
+                p_bin = p_bin.tail(pricing_scen_ct)
+                pmodel = ExaGO_File(self.name,
+                                    n_scenarios, # Number of scenarios we actually want in our final csv file
+                                    n_periods,
+                                    loss_of_load_cost,
+                                    spilled_wind_cost,
+                                    scenarios_df.loc[p_bin.index],
+                                    p_bin,
+                                    total_power_t0,
+                                    nscen_priced=pricing_scen_ct)
+                scenarios_df_copy = scenarios_df.drop(columns=["TotalPower", "Deviation"])
+                cost_n = pmodel.compute_scenario_cost(actuals_df,
+                                                      scenarios_df_copy.loc[p_bin.index],
+                                                      timestamp,
+                                                      random_seed=594081473)
+            elif fidelity == "exago_lib":
+                # Import the module
+                from powerscenarios.costs.exago.exago_lib import ExaGO_Lib
+                pricing_scen_ct = 100
+                p_bin = p_bin.tail(pricing_scen_ct)
+                pmodel = ExaGO_Lib(self.name,
+                                   n_scenarios, # Number of scenarios we actually want in our final csv file
+                                   n_periods,
+                                   loss_of_load_cost,
+                                   spilled_wind_cost,
+                                   scenarios_df.loc[p_bin.index],
+                                   p_bin,
+                                   total_power_t0,
+                                   nscen_priced=pricing_scen_ct)
+                scenarios_df_copy = scenarios_df.drop(columns=["TotalPower", "Deviation"])
+
+                cost_n = pmodel.compute_scenario_cost(actuals_df,
+                                                      scenarios_df_copy.loc[p_bin.index],
+                                                      timestamp,
+                                                      random_seed=594081473)
+            else:
+                raise NotImplementedError
+
+
+            ## check is we have nan's:
+            if cost_n.isna().any():
+                print("scenario cost contain {} NaN(s). Fix Cost column values.".format(len(cost_n.loc[cost_n.isna()])))
+                return
+            # shift the cost_n if we have negatives
+            cost_n_orig = cost_n.copy()
+
+            if (cost_n<0).any():
+
+                print("Negative costs. Shifting up by the minimum cost.")
+                cost_n = cost_n_orig - cost_n_orig.min()
+
+            # # compute costs of each 1-period scenario
+            # cost_1 = scenarios_df["Deviation"].apply(
+            #     lambda dev: np.abs(loss_of_load_cost * dev)
+            #     if dev < 0
+            #     else np.abs(spilled_wind_cost * dev)
+            # )
+            # # print("any neg values in cost_1? {}".format((cost_1 < 0).any()))
+            #
+            # # based on n_periods, compute cost_n, rolling window sum (if n_periods is 1, this will be the same as cost_1)
+            # cost_n = cost_1.rolling(n_periods).sum().shift(-(n_periods - 1))
+            # # rolling window operation looses digits, have to round (so we don't have negative values when adding zeroes)
+            # cost_n = cost_n.round(self.WTK_DATA_PRECISION)
+            # if (cost_n < 0).any():
+            #     print("any neg values in cost_n? {}".format((cost_n < 0).any()))
+
+            # IS
+            # probability mass function g(s) i.e. importance distribution
+            importance_probs = cost_n / cost_n.sum()
+
+            # sample of n_scenarios timestamps that are in wanted bin with probabilities given by cost_n series
+            sample_timestamps = p_bin.sample(
+                n_scenarios, random_state=random_seed, weights=importance_probs
+            ).index
+
+            # IS weights: f(s)/g(s), i.e. nominal/importance
+            importance_weights = (1 / p_bin.size) / importance_probs.loc[sample_timestamps]
+
+            # df of weights to return
+            weights_df = pd.DataFrame(index=[timestamps[1]], columns=range(1, n_scenarios + 1))
+            weights_df.loc[timestamps[1]] = dict(
+                zip(range(1, n_scenarios + 1), importance_weights.values)
+            )
+
+        # initialize multi-indexed df for all scenarios to return (one sim timestamp)
+        iterables = [[timestamps[1]], range(1, n_scenarios + 1), timestamps[1:]]
+        # index
+        index = pd.MultiIndex.from_product(
+            iterables, names=["sim_timestamp", "scenario_nr", "period_timestamp"]
+        )
+        # multi_scenarios_df
+        multi_scenarios_df = pd.DataFrame(index=index, columns=actuals_df.columns[:-1])
+
+        # now find wanted periods for each scenario i.e. consecutive timestamps in scenario_df
+        for sample_i, sample_timestamp in enumerate(sample_timestamps):
+            #print("sample_timestamp={}".format(sample_timestamp))
+            # needed timestamps
+            # pd.date_range(start=sample_timestamp, periods=n_periods, freq="5min")
+            # deviation will be a df even with 1 period because loc is used with pd.date_range
+            deviation_df = scenarios_df.loc[
+                pd.date_range(start=sample_timestamp, periods=n_periods, freq="5min")
+            ].copy()
+
+            # change deviation index to match actuals we adding it to
+            deviation_df.index = timestamps[1:]
+
+            # make scenario df for each sample_timestamp (could be done outside the loop)
+            scenario_df = pd.DataFrame(
+                index=timestamps[1:], columns=deviation_df.columns
+            ).drop(["Deviation", "TotalPower", "Cost"], axis=1)
+            #     print("\nscenario_df:")
+            #     scenario_df
+
+            #     print("\nactual:")
+            #     actuals_df.loc[timestamps[0]]
+
+            # first take actual
+            running_sum = actuals_df.loc[timestamps[0]].drop("TotalPower").copy()
+            # now keep adding deviations to the above actual
+            for timestamp in timestamps[1:]:
+                running_sum += deviation_df.loc[timestamp].drop(
+                    ["TotalPower", "Deviation", "Cost"],
+                )
+                scenario_df.loc[timestamp] = running_sum
+
+            # "under/over" problem
+            # for GenMWMax info we take wind generators and reindex by GenUID
+            wind_generators_df = self.wind_generators.set_index("GenUID")
+            # under
+            # .where replaces False
+            scenario_df.where(scenario_df >= 0.0, other=0.0, inplace=True)
+            # over
+            # scenario < wind_generators_df["GenMWMax"]
+            scenario_df=scenario_df.where(
+                scenario_df <= wind_generators_df["GenMWMax"],
+                other=wind_generators_df["GenMWMax"],
+                axis=1,
+                #inplace=True,
+            )
+            # scenario
+            # round wind power values to WTK precision 
+            scenario_df = scenario_df.round(self.WTK_DATA_PRECISION)
+            #     # add each scenario to the multi-indexed df to return
+
+
+            multi_scenarios_df.loc[(timestamps[1], sample_i + 1,)] = scenario_df.values
+        return multi_scenarios_df, weights_df, p_bin, cost_n_orig
+
