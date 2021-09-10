@@ -1,0 +1,13 @@
+#!/bin/bash
+# Begin LSF Directives
+#BSUB -P CSC359
+#BSUB -W 1:00
+#BSUB -nnodes 1
+#BSUB -alloc_flags gpumps
+#BSUB -J ego_test
+#BSUB -o ego_fout.%J
+#BSUB -e ego_errout.%J
+
+source ${PROJWORK}/csc359/NREL/kpanda/setup-environment.sh
+cd ${PROJWORK}/csc359/NREL/kpanda/powerscenarios/scripts/summit
+jsrun -n1 python generate_scenarios_mpi.py > fout_scen 2>&1 

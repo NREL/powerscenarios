@@ -22,13 +22,14 @@ source ${PROJWORK}/csc359/NREL/kpanda/setup-environment.sh
 ```
 This should load all the spack modules and environemnt variables necessary for 
 running the simulations.
+
 3. Run the example notebook as
 ```
-jsrn -n1 python ${POWERSCENARIOS_ROOT}/scripts/summit/generate_scenarios_mpi.py
+jsrun -n1 python ${POWERSCENARIOS_ROOT}/scripts/summit/generate_scenarios_mpi.py
 ```
 where `${POWERSCENARIOS_ROOT}` indicates the path to your `powerscenarios` repo
 
 ## Batch job steps
 
 1. navigate to `${POWERSCENARIOS_ROOT}/scripts/summit/`
-2. Submit a the script similar to `generate_scenarios.lsf`
+2. Submit a script similar to `generate_scenarios.lsf`
