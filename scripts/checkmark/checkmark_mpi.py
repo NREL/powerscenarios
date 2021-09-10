@@ -17,7 +17,7 @@ import yaml
 
 
 ####
-# # set PYWTK_CACHE_DIR to locate WIND Toolkit data 
+# # set PYWTK_CACHE_DIR to locate WIND Toolkit data
 # # will download from AWS as needed
 # os.environ["PYWTK_CACHE_DIR"] = os.path.join(os.environ["HOME"], "pywtk-data")
 
@@ -25,6 +25,7 @@ from powerscenarios.parser import Parser
 
 # from powerscenarios.grid import Grid
 from powerscenarios.grid_copy2 import Grid
+
 
 def parse_args():
     """Parse command line arguments."""
@@ -54,7 +55,9 @@ def config_logging(verbose, output_dir):
     logger = logging.getLogger(__name__)
     logger.setLevel(log_level)
     # define file handler and set formatter
-    file_handler = logging.FileHandler(os.path.join(output_dir, "log_checkmark_mpi.log"))
+    file_handler = logging.FileHandler(
+        os.path.join(output_dir, "log_checkmark_mpi.log")
+    )
     formatter = logging.Formatter(
         "%(asctime)s : %(levelname)s : %(name)s : %(message)s"
     )
@@ -68,6 +71,7 @@ def config_logging(verbose, output_dir):
     logger.addHandler(console_handler)
 
     return logger
+
 
 def load_config(args):
     ## Read base config from file (yaml or json)
@@ -88,7 +92,6 @@ def load_config(args):
     return config
 
 
-
 def checkmark_cost(total_deviation):
     loss_of_load_cost = 10000 / 12.0
     spilled_wind_cost = 0.001
@@ -99,14 +102,10 @@ def checkmark_cost(total_deviation):
     return cost
 
 
-
-
 comm = MPI.COMM_WORLD
 size = MPI.COMM_WORLD.Get_size()
 rank = MPI.COMM_WORLD.Get_rank()
 name = MPI.Get_processor_name()
-
-
 
 
 def main():
@@ -114,11 +113,10 @@ def main():
     # Initialization
     args = parse_args()
 
-
     # Load configuration
     config = load_config(args)
 
-    #data_dir =     
+    # data_dir =
     output_dir = os.path.expandvars(config["output"]["dir"])
     os.makedirs(output_dir, exist_ok=True)
 
@@ -126,8 +124,7 @@ def main():
     # if (config["method"] == "radius") and (not config["max_radius"]):
     #     raise ValueError("Option 'max_radius' not given.")
 
-     
-    #output_dir = os.path.expandvars(config["output_dir"])
+    # output_dir = os.path.expandvars(config["output_dir"])
 
     # # input dir needs to contain sources_with_network templates
     # input_dir = os.path.expandvars(config["input_dir"])
@@ -135,20 +132,16 @@ def main():
     # if not os.path.exists(output_dir):
     #     os.makedirs(output_dir)
 
-    # # os.makedirs(output_dir, exist_ok=True)                                                                            
-
-    
+    # # os.makedirs(output_dir, exist_ok=True)
 
     # Loggging
     logger = config_logging(verbose=args.verbose, output_dir=output_dir)
 
-
-
     if rank == 0:
-        #print("\n\n\n#########################################################")
-        #print("\n\n\n#########################################################")
+        # print("\n\n\n#########################################################")
+        # print("\n\n\n#########################################################")
 
-        #grid_name = "ACTIVSg200"  # TAMU 200 bus casea
+        # grid_name = "ACTIVSg200"  # TAMU 200 bus casea
         grid_name = config["grid"]["name"]
 
         # grid_name = "ACTIVSg2000"  # TAMU 2000 bus case
@@ -160,7 +153,7 @@ def main():
 
         data_dir = os.path.expandvars(config["input"]["grid_dir"])
 
-        #data_dir = "../data/grid-data/"
+        # data_dir = "../data/grid-data/"
 
         # aux_file_name = data_dir + grid_name + "/" + grid_name + ".aux"
         aux_file_name = os.path.join(data_dir, grid_name, grid_name + ".aux")
@@ -173,45 +166,51 @@ def main():
         # to instantiate a grid we need: name, bus, generator, and wind generator dataframes from Parser
         # really, we only wind generators, will change in the future
         grid = Grid(grid_name, bus_df, gen_df, wind_gen_df)
-        grid
-        #print(grid.info())
-        logger.debug(grid.info())
+
+        logger.info(
+            "\n\nreading in grid definition files from {}".format(aux_file_name)
+        )
+        # print(grid.info())
+        # logger.debug(grid.info())
+        logger.info(grid.info())
 
         ## if read_tables then use h5 wind_sites/actuals/scenarios tables
         if config["input"]["read_tables"]:
+            logger.info(
+                "\n\nreading in tables(wind sites, actuals, scenarios) from h5 files in:{tables_dir}".format()
+            )
             tables_dir = os.path.expandvars(config["input"]["tables_dir"])
-
 
             # read instead of retrieve_wind_sites
             filename = "{}_wind_sites_df.h5".format(grid_name)
-            grid.wind_sites = pd.read_hdf(os.path.join(tables_dir,filename))
-            #print("\n wind sites")
-            #print(grid.wind_sites.head())
+            grid.wind_sites = pd.read_hdf(os.path.join(tables_dir, filename))
+            # print("\n wind sites")
+            # print(grid.wind_sites.head())
             logger.debug("\n wind sites")
             logger.debug(grid.wind_sites.head())
 
             # read instead of make_tables
             filename = "{}_actuals_df.h5".format(grid_name)
-            grid.actuals = pd.read_hdf(os.path.join(tables_dir,filename))
+            grid.actuals = pd.read_hdf(os.path.join(tables_dir, filename))
             filename = "{}_scenarios_df.h5".format(grid_name)
-            grid.scenarios = pd.read_hdf(os.path.join(tables_dir,filename))
+            grid.scenarios = pd.read_hdf(os.path.join(tables_dir, filename))
 
         # for actuals, make year you want
         grid.actuals.index = grid.actuals.index.map(lambda t: t.replace(year=2020))
         # see what you got
-        #print("\nactuals_df:")
-        #print(grid.actuals.head())
-        #print("\nscenarios_df:")
-        #print(grid.scenarios.head())
-        logger.debug("\n\nactuals_df:")
-        logger.debug(grid.actuals.head())
-        logger.debug("\n\nscenarios_df:")
-        logger.debug(grid.scenarios.head())
+        # print("\nactuals_df:")
+        # print(grid.actuals.head())
+        # print("\nscenarios_df:")
+        # print(grid.scenarios.head())
+        logger.info("\n\nactuals_df:")
+        logger.info(grid.actuals.head())
+        logger.info("\n\nscenarios_df:")
+        logger.info(grid.scenarios.head())
 
         ## for TESTING just take a smaller scenario df
         ## first 10 (all positive deviations)
-        #s_df = grid.scenarios.head(100).copy()
-        #s_df = grid.scenarios.head(100000).copy()
+        # s_df = grid.scenarios.head(100).copy()
+        # s_df = grid.scenarios.head(100000).copy()
         s_df = grid.scenarios.copy()
         ## ten scenarios with first 5 positive and last 5 negative deviations
 
@@ -220,7 +219,6 @@ def main():
         #         "2008-01-01 03:45:00+00:00"
         #     )
         # ].copy()
-
 
         ## drop Total power and Deviation (but remember thsese, will need later for power conditioning)
         s_df_Deviation = s_df["Deviation"].copy()
@@ -247,8 +245,8 @@ def main():
 
         t0 = time.time()
 
-        #print(" i'm rank {}:".format(rank))
-        logger.debug("\n processing {} files on {} cores".format(len(s_list), size))
+        # print(" i'm rank {}:".format(rank))
+        logger.info("\n processing {} scenarios on {} cores".format(len(s_list), size))
 
         # don't know how to implement this check with ranks, sys.exit() seems to work, but maybe I need to do comm.Abort() ?
         # check if number of ranks <= number of files
@@ -272,7 +270,7 @@ def main():
         for i in range(-remainder_size, 0):
             s_list_chunks[i].append(s_list[i])
 
-        logger.debug("\nscattering data:")
+        logger.info("\nscattering data:")
         logger.debug(s_list_chunks)
 
     else:
@@ -282,7 +280,6 @@ def main():
     # print(s_list_chunks)
     # s_list_chunks
 
-
     s_list_chunks = comm.scatter(s_list_chunks, root=0)
     # print(
     #     "\n\n\nrank {} has {} scenarios = {}".format(
@@ -290,7 +287,6 @@ def main():
     #     )
     # )
     # print('\n\n\nrank {} has scenarios = {}'.format(rank,s_list_chunks))
-
 
     # now change scattered data
     for scenario in s_list_chunks:
@@ -308,13 +304,16 @@ def main():
         # file_name[0] = max_value
         # file_name[1] = index
 
-
     # gather s_list_chunks back to one list
     new_s_list_chunks = comm.gather(s_list_chunks, root=0)
 
     if rank == 0:
+        logger.info("\n\naggregating scenario costs")
+
         logger.debug(
-            "\n\nrank {}: gathered new_s_list_chunks is: {}".format(rank, new_s_list_chunks)
+            "\n\nrank {}: gathered new_s_list_chunks is: {}".format(
+                rank, new_s_list_chunks
+            )
         )
         new_s_list = [scenario for chunk in new_s_list_chunks for scenario in chunk]
 
@@ -335,10 +334,6 @@ def main():
         #### add cost_1 to grid.scenarios
         grid.scenarios = new_s_df
 
-        
-
-
-
         # ##### for debugging purposes record what you got
         # logger.info("\n\n rank {} has new_s_df:".format(rank))
         # logger.info(new_s_df)
@@ -346,40 +341,43 @@ def main():
         # logger.info("Priced {} scenarios".format(len(new_s_df) ) )
         # t1 = time.time()
         # logger.info("Ellapsed time: {} s".format(t1-t0))
-        
-        # ## save output to hdf        
+
+        # ## save output to hdf
         # filename = "{}_new_s_df.h5".format(grid_name)
         # new_s_df.to_hdf(os.path.join(output_dir,filename),'MW',  mode='w')
         # logger.info("saving output to {}".format(os.path.join(output_dir,filename)))
 
-        # ## save output to csv        
+        # ## save output to csv
         # filename = "{}_new_s_df.csv".format(grid_name)
         # new_s_df.to_csv(os.path.join(output_dir,filename))
         # logger.info("saving output to {}".format(os.path.join(output_dir,filename)))
 
         ####### generate scenarios
         # other parameters
-        #sim_timestamp = pd.Timestamp(config["scenario"]["start"])
+        # sim_timestamp = pd.Timestamp(config["scenario"]["start"])
         sim_timestamp = pd.Timestamp("2020-08-01 00:15:00+0000", tz="UTC")
 
-        logger.info("\nsim_timestamp = {}".format(sim_timestamp))
+        logger.info(
+            "\n\nscreating scenarios for sim_timestamp = {}".format(sim_timestamp)
+        )
 
         sampling_method = config["scenario"]["sampling_method"]
         fidelity = config["scenario"]["fidelity"]
-        n_scenarios = config["scenario"]["n_scenarios"] 
-        n_periods =  config["scenario"]["n_periods"]
+        n_scenarios = config["scenario"]["n_scenarios"]
+        n_periods = config["scenario"]["n_periods"]
 
-
-        # sampling_method = "importance" 
+        logger.info(
+            "\n\nscenario paramaters: \nsampling_method: {} \nfidelity: {} \nn_scenarios {} \nn_periods {} ".format(
+                sampling_method, fidelity, n_scenarios, n_periods
+            )
+        )
+        # sampling_method = "importance"
         # fidelity = "checkmark"
-        # n_scenarios = 3 
+        # n_scenarios = 3
         # n_periods = 1
-
-
 
         # random_seed = np.random.randint(2 ** 31 - 1)
         random_seed = 25
-
 
         scenarios_df, weights_df, p_bin, cost_n = grid.generate_wind_scenarios2(
             sim_timestamp,
@@ -393,19 +391,20 @@ def main():
             output_format=0,
         )
 
-
         ##### save generated dataframes
         save_dir = config["output"]["dir"]
         actuals_df = (
-           grid.actuals.loc[sim_timestamp:sim_timestamp].drop("TotalPower", axis=1).copy()
+            grid.actuals.loc[sim_timestamp:sim_timestamp]
+            .drop("TotalPower", axis=1)
+            .copy()
         )
 
         if config["output"]["df_format"] == "Shri":
 
             # add t0 actual
             actuals_df.loc[sim_timestamp - pd.Timedelta("5min")] = grid.actuals.loc[
-                    sim_timestamp - pd.Timedelta("5min")
-                ]
+                sim_timestamp - pd.Timedelta("5min")
+            ]
             actuals_df.sort_index(inplace=True)
             ## save actuals_df
             filename = "actuals_{}.csv".format(grid_name)
@@ -422,15 +421,15 @@ def main():
             ## save scenarios with weights
             filename = "{}_scenarios_{}.csv".format(n_scenarios, grid_name)
             df.to_csv(os.path.join(save_dir, filename))
-       
+
         elif config["output"]["df_format"] == "original":
 
             if config["output"]["file_format"] == "csv":
 
                 ## add t0 actual
                 actuals_df.loc[sim_timestamp - pd.Timedelta("5min")] = grid.actuals.loc[
-                        sim_timestamp - pd.Timedelta("5min")
-                    ]
+                    sim_timestamp - pd.Timedelta("5min")
+                ]
                 actuals_df.sort_index(inplace=True)
 
                 ## save actuals_df
@@ -444,8 +443,6 @@ def main():
                 ## save weights
                 filename = "{}orig_weights_{}.csv".format(n_scenarios, grid_name)
                 weights_df.to_csv(os.path.join(save_dir, filename))
-
-
 
             # #### todo: problem with multiindex when saving to h5
             # elif config["output"]["file_format"] == "h5":
@@ -468,9 +465,6 @@ def main():
             #     filename = "{}orig_weights_{}.h5".format(n_scenarios, grid_name)
             #     weights_df.to_hdf(os.path.join(save_dir, filename),"MW", mode="w")
 
-
-
-
         # flatten chunks back to one list
     #     new_file_names = [file_name for chunk in new_file_names_chunks for file_name in chunk]
     #     # now find the max in the list of maxes
@@ -481,12 +475,5 @@ def main():
     #     print('elapsed time = {}'.format(t1-t0))
 
 
-
-
 if __name__ == "__main__":
     main()
-
-
-
-
-
