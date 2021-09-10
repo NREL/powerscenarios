@@ -2,14 +2,16 @@
 # download as needed from 
 # https://electricgrids.engr.tamu.edu/electric-grid-test-cases/
 input:
-    grid_dir: ../data/grid-data/
+    grid_dir: /Users/isatkaus/projects/ecp/public-github/powerscenarios/data/grid-data/
     ## read tables from h5 files (previously aggregated with make_tables)
     read_tables: True
-    tables_dir: ../data/tables-data/
+    tables_dir: /Users/isatkaus/projects/ecp/public-github/powerscenarios/data/tables-data/
 
 
 # grid name: RTS, ACTIVSg200, ACTIVSg2000, ACTIVSg10k, ... 
 grid:
+    #name: ACTIVSg10k 
+    #name: ACTIVSg2000 
     name: ACTIVSg200 
 
 # harcoded for now and not used
@@ -26,21 +28,25 @@ wind_penetration:
 
 # parameters for generated scenarios 
 scenario:
-    start: 2007-07-01 00:00:00
+    ## sim_timestamps to generate scenarios for
+    ## for now uses only start as one sim_timestamp
+    start: 2020-08-01 00:15:00
     end: 2007-07-01 00:05:00 
     # sampling methods available: monte carlo,  importance
-    sampling_method: monte carlo 
-    n_scenarios: 3 
-    n_periods: 2 
+    sampling_method: importance 
+    fidelity: checkmark 
+    n_scenarios: 10
+    n_periods: 1 
 
 ## ---end not used ---
 
 # output of actuals, scenarios, and weights
 output:
     dir: ./output 
-    df_format: original 
-    # file formats available: csv, aux
-    file_format: aux 
+    ## how to save: original, Shri,
+    df_format: Shri 
+    # file formats available: csv, aux, h5 (does not work for multiindex yet..)
+    file_format: csv 
 
 
 # other flags
