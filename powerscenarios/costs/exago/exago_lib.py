@@ -210,16 +210,16 @@ class ExaGO_Lib(AbstractCostingFidelity):
                                  recvbuf=(q_cost_global, nscen_local_arr))
         cost_n = pd.Series(index=wind_scen_df.index, data=q_cost_global)
 
-        for i in range(comm_size):
-            if my_mpi_rank == i:
-                # Zip the numpy array into the timeseries
-                # cost_n = pd.Series(index=wind_scen_df.index, data=q_cost_global)
-                print("rank = ", my_mpi_rank)
-                print("q_cost_global = ", repr(q_cost_global))
-                # np.savetxt("cost_lib.txt", q_cost_global)
-                # print("q_cost_global max = ", np.amax(q_cost_global))
-                # print("q_cost_global min = ", np.amin(q_cost_global))
-            self.ego.comm.Barrier()
+        # for i in range(comm_size):
+        #     if my_mpi_rank == i:
+        #         # Zip the numpy array into the timeseries
+        #         # cost_n = pd.Series(index=wind_scen_df.index, data=q_cost_global)
+        #         print("rank = ", my_mpi_rank)
+        #         print("q_cost_global = ", repr(q_cost_global))
+        #         # np.savetxt("cost_lib.txt", q_cost_global)
+        #         # print("q_cost_global max = ", np.amax(q_cost_global))
+        #         # print("q_cost_global min = ", np.amin(q_cost_global))
+        #     self.ego.comm.Barrier()
 
         return cost_n
 
