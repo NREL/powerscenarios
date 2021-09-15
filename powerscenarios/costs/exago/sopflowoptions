@@ -1,7 +1,7 @@
-# -netfile /Users/isatkaus/projects/ecp/public-github/powerscenarios/notebooks/dev/scen_ACTIVSg200.m
-# -scenfile /Users/isatkaus/projects/ecp/public-github/powerscenarios/notebooks/dev/scenarios_ACTIVSg200.csv
--netfile /Users/kpanda/UserApps/powerscenarios/notebooks/scen_ACTIVSg200.m
--scenfile /Users/kpanda/UserApps/powerscenarios/notebooks/scenarios_ACTIVSg200.csv
+-netfile /Users/isatkaus/projects/ecp/public-github/powerscenarios/notebooks/dev/scen_ACTIVSg200.m
+-scenfile /Users/isatkaus/projects/ecp/public-github/powerscenarios/notebooks/dev/scenarios_ACTIVSg200.csv
+#-netfile /Users/kpanda/UserApps/powerscenarios/notebooks/scen_ACTIVSg200.m
+#-scenfile /Users/kpanda/UserApps/powerscenarios/notebooks/scenarios_ACTIVSg200.csv
 
 -save_output
 -sopflow_solver EMPAR

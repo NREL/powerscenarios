@@ -33,7 +33,8 @@ class ExaGO_Lib(AbstractCostingFidelity):
                  p_bin,
                  total_power_t0,
                  WTK_DATA_PRECISION=6,
-                 nscen_priced=1):
+                 nscen_priced=1,
+                 mpi_comm=None):
 
         AbstractCostingFidelity.__init__(self,
                                          n_scenarios,
@@ -52,6 +53,7 @@ class ExaGO_Lib(AbstractCostingFidelity):
         self.sopflow_options_dict = {'nscenarios' : nscen_priced, # This needs to be a string as the function runs a bash command
                                     }
 
+        self.comm = mpi_comm # MPI communicator
         self._create_ego_object()
 
         return
@@ -76,8 +78,10 @@ class ExaGO_Lib(AbstractCostingFidelity):
         real_load_file = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadP.csv".format(self.grid_name)
         reactive_load_file = None # "/Users/kpanda/UserApps/powerscenarios/data/load-data/{0}_loadQ.csv".format(self.grid_name)
 
-        self.ego = ExaGO_Python(network_file, load_dir, self.grid_name, real_load_file, reactive_load_file)
-        self.ego._cleanup() # Lets clean up the file based implementation.
+        self.ego = ExaGO_Python(network_file, load_dir, self.grid_name,
+                                real_load_file, reactive_load_file, comm=self.comm)
+        if self.ego.comm.Get_rank() == 0:
+            self.ego._cleanup() # Lets clean up the file based implementation.
 
         return
 
@@ -160,7 +164,16 @@ class ExaGO_Lib(AbstractCostingFidelity):
             ts = wind_scen_df.index[idx_offset + i] # Will not work for MPI
             local_opf_scen_dict[i] = OPFLOW()
             opf_object = local_opf_scen_dict[i] # For convenience as of now
+            opf_object.dont_finalize()
             opf_object.read_mat_power_data(self.ego.network_file)
+            opf_object.set_include_loadloss(True)
+            opf_object.set_loadloss_penalty(833)
+            opf_object.set_include_powerimbalance(True)
+            opf_object.set_powerimbalance_penalty(833)
+            opf_object.set_model('POWER_BALANCE_POLAR')
+            opf_object.set_solver('IPOPT')
+            opf_object.set_initialization('ACPF')
+            opf_object.set_genbusvoltage('VARIABLE_WITHIN_BOUNDS')
             opf_object.setup_ps()
 
             # Constrain the thermal generation for the second stage
@@ -197,13 +210,16 @@ class ExaGO_Lib(AbstractCostingFidelity):
                                  recvbuf=(q_cost_global, nscen_local_arr))
         cost_n = pd.Series(index=wind_scen_df.index, data=q_cost_global)
 
-        if my_mpi_rank == 0:
-            # Zip the numpy array into the timeseries
-            # cost_n = pd.Series(index=wind_scen_df.index, data=q_cost_global)
-            print("q_cost_global = ", repr(q_cost_global))
-            # np.savetxt("cost_lib.txt", q_cost_global)
-            print("q_cost_global max = ", np.amax(q_cost_global))
-            print("q_cost_global min = ", np.amin(q_cost_global))
+        for i in range(comm_size):
+            if my_mpi_rank == i:
+                # Zip the numpy array into the timeseries
+                # cost_n = pd.Series(index=wind_scen_df.index, data=q_cost_global)
+                print("rank = ", my_mpi_rank)
+                print("q_cost_global = ", repr(q_cost_global))
+                # np.savetxt("cost_lib.txt", q_cost_global)
+                # print("q_cost_global max = ", np.amax(q_cost_global))
+                # print("q_cost_global min = ", np.amin(q_cost_global))
+            self.ego.comm.Barrier()
 
         return cost_n
 
@@ -217,12 +233,17 @@ class ExaGO_Python:
                  grid_name,
                  real_load_file=None,
                  reactive_load_file=None,
-                 year=2020):
+                 year=2020,
+                 comm=None):
 
         start_init = time.time()
 
         # MPI specifics
-        self.comm = MPI.COMM_WORLD
+        if comm == None:
+            print("No MPI comm provided, establishing a new one")
+            self.comm = MPI.COMM_WORLD
+        else:
+            self.comm = comm
         my_mpi_rank = self.comm.Get_rank()
 
         # self.exe_path = exe_path
@@ -356,6 +377,27 @@ class ExaGO_Python:
         return
 
     def _assign_gen_ids(self, gen_df):
+            gbuses = gen_df.loc[:,'bus']
+            gids = ['1 '] * gbuses.size
+
+            if gbuses.size > gbuses.unique().size:
+                next_gid = {bus:1 for bus in gbuses}
+                for (k,bus) in enumerate(gen_df.loc[:,'bus']):
+                    idx = gen_df.loc[:,'bus'] == bus
+                    if idx.sum() > 1:
+                        gids[k] = "{:<2d}".format(next_gid[bus])
+                        next_gid[bus] += 1
+                    else:
+                        pass
+
+            elif gbuses.size < gbuses.unique().size:
+                assert False
+            else:
+                pass
+            return gids
+
+    """
+    def _assign_gen_ids(self, gen_df):
         gbuses = gen_df.loc[:,'bus']
         gids = ['1 '] * gbuses.size
         if gbuses.size > gbuses.unique().size:
@@ -373,6 +415,7 @@ class ExaGO_Python:
         else:
             pass
         return gids
+    """
 
     def _set_wind_new(self,
                       opf,
@@ -458,7 +501,14 @@ class ExaGO_Python:
 
         # Create OPFLOW object
         self.opf_base = OPFLOW()
+        self.opf_base.dont_finalize()
         self.opf_base.read_mat_power_data(self.network_file)
+        self.opf_base.set_include_loadloss(False)
+        self.opf_base.set_include_powerimbalance(False)
+        self.opf_base.set_model('POWER_BALANCE_POLAR')
+        self.opf_base.set_solver('IPOPT')
+        self.opf_base.set_initialization('ACPF')
+        # self.opf_base.set_genbusvoltage('VARIABLE_WITHIN_BOUNDS')
         self.opf_base.setup_ps()
 
         ## # Uncomment for custom load
@@ -478,7 +528,8 @@ class ExaGO_Python:
         t2 = time.time()
 
         # Python call
-        self.opf_base.solve()
+        petsc_error_code = self.opf_base.solve()
+        # print("petsc_error_code = ", petsc_error_code)
         self.opf_base.solution_to_ps()
 
         t3 = time.time()
@@ -514,7 +565,7 @@ Total: {:g}(s)
 
         return (obj, set_points)
 
-
+    """
     def cost_scenarios(self,
                            start_time,
                            pv_fcst_df, # Currently unused
@@ -627,3 +678,4 @@ Total: {:g}(s)
         self.comm.Barrier()
 
         return q_cost_global
+    """

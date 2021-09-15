@@ -1,0 +1,57 @@
+# grid data, i.e. network description data 
+# download as needed from 
+# https://electricgrids.engr.tamu.edu/electric-grid-test-cases/
+input:
+    grid_dir: /Users/isatkaus/projects/ecp/public-github/powerscenarios/data/grid-data/
+    ## read tables from h5 files (previously aggregated with make_tables)
+    read_tables: True
+    tables_dir: /Users/isatkaus/projects/ecp/public-github/powerscenarios/data/tables-data/
+
+
+# grid name: RTS, ACTIVSg200, ACTIVSg2000, ACTIVSg10k, ... 
+grid:
+    #name: ACTIVSg10k 
+    #name: ACTIVSg2000 
+    name: ACTIVSg200 
+
+# harcoded for now and not used
+tables:
+    actuals_start: 2007-01-01 00:00:00
+    actuals_end: 2007-12-31 23:55:00
+    scenarios_start: 2008-01-01 00:00:00 
+    scenarios_end: 2013-12-31 23:55:00 
+
+# (optional) change wind power peretration percentage on the grid 
+wind_penetration:
+    change: False 
+    new_value: 30.
+
+# parameters for generated scenarios 
+scenario:
+    ## sim_timestamps to generate scenarios for
+    ## for now uses only start as one sim_timestamp
+    start: 2020-08-01 00:15:00
+    end: 2007-07-01 00:05:00 
+    # sampling methods available: monte carlo,  importance
+    sampling_method: importance 
+    fidelity: checkmark 
+    n_scenarios: 10
+    n_periods: 1 
+
+## ---end not used ---
+
+# output of actuals, scenarios, and weights
+output:
+    dir: ./output 
+    ## how to save: original, Shri,
+    df_format: Shri 
+    # file formats available: csv, aux, h5 (does not work for multiindex yet..)
+    file_format: csv 
+
+
+# other flags
+# convert solar to wind in RTS grid case?
+RTS_solar2wind: True
+
+
+

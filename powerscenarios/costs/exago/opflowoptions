@@ -1,5 +1,5 @@
-# -netfile /Users/isatkaus/projects/ecp/public-github/powerscenarios/notebooks/dev/case_ACTIVSg200.m
--netfile /Users/kpanda/UserApps/powerscenarios/notebooks/case_ACTIVSg200.m
+-netfile /Users/isatkaus/projects/ecp/public-github/powerscenarios/notebooks/dev/case_ACTIVSg200.m
+#-netfile /Users/kpanda/UserApps/powerscenarios/notebooks/case_ACTIVSg200.m
 -save_output
 
 # Select Solver (IPOPT,TAO, HIOP)
