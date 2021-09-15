@@ -576,9 +576,6 @@ class Grid(object):
             elif fidelity == "exago_lib":
                 # Import the module
                 from powerscenarios.costs.exago.exago_lib import ExaGO_Lib
-                from mpi4py import MPI
-                from exago.opflow import OPFLOW
-                from exago import config
 
                 pricing_scen_ct = kwargs["pricing_scen_ct"]
                 mpi_comm = kwargs["mpi_comm"]
@@ -598,7 +595,7 @@ class Grid(object):
                 cost_n = pmodel.compute_scenario_cost(actuals_df,
                                                       scenarios_df_copy.loc[p_bin.index],
                                                       timestamp,
-                                                      random_seed=594081473)
+                                                      random_seed=random_seed)
                 # for i in range(mpi_comm.Get_size()):
                 #     if mpi_comm.Get_rank() == i:
                 #         print("rank = ", i)
