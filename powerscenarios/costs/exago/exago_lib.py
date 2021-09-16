@@ -115,7 +115,8 @@ class ExaGO_Lib(AbstractCostingFidelity):
                                            self.opflow_options_dict,
                                            system="Mac"
                                            )
-        print("\nbase_cost = ", base_cost, "\n")
+        if my_mpi_rank == 0:
+            print("\nbase_cost = ", base_cost, "\n")
         # Check if base cost is the same on all ranks
         self.ego.comm.Barrier()
         base_cost_arr = self.ego.comm.gather(base_cost, root=0)
