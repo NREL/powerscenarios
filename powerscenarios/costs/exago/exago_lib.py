@@ -157,7 +157,7 @@ class ExaGO_Lib(AbstractCostingFidelity):
 
         q_cost_local = np.zeros(nscen_local_arr[my_mpi_rank])
         local_opf_scen_dict = {}
-        print("my_mpi_rank = ", my_mpi_rank, ", idx_offset = ", idx_offset)
+        # print("my_mpi_rank = ", my_mpi_rank, ", idx_offset = ", idx_offset)
         # time_offset = idx_offset*step
         # ts = wind_scen_df.index[0] + pd.Timedelta(minutes=time_offset)
         for i in range(nscen_local_arr[my_mpi_rank]):
