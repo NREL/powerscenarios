@@ -309,8 +309,9 @@ class ExaGO_Python:
         # EXAGO_INSTALL_DIR
         self.opflow_executable = self._check_for_exago('opflow')
         self.sopflow_executable = self._check_for_exago('sopflow')
-        print("opflow executable = ", self.opflow_executable)
-        print("sopflow executable = ", self.sopflow_executable)
+        if my_mpi_rank == 0:
+            print("opflow executable = ", self.opflow_executable)
+            print("sopflow executable = ", self.sopflow_executable)
 
         stop_init = time.time()
         # print("Init complete. Time: {:g}(s)".format(stop_init - start_init))
@@ -326,7 +327,7 @@ class ExaGO_Python:
             if os.path.isfile(exe_file) and os.access(exe_file, os.X_OK):
                 executable_full_path = path + '/' + executable_name
                 val += 1
-                print("ExaGO executable {0} found in PATH".format(executable_name))
+                # print("ExaGO executable {0} found in PATH".format(executable_name))
                 return executable_full_path
 
         assert val == 0
@@ -336,7 +337,7 @@ class ExaGO_Python:
             if os.path.isfile(exe_file) and os.access(exe_file, os.X_OK):
                 executable_full_path = os.environ["EXAGO_INSTALL_DIR"] + '/' + executable_name
                 val += 1
-                print("ExaGO executable {0} found in EXAGO_INSTALL_DIR".format(executable_name))
+                # print("ExaGO executable {0} found in EXAGO_INSTALL_DIR".format(executable_name))
                 return executable_full_path
         else:
             raise ValueError("ExaGO executables not found either in $PATH or $EXAGO_INSTALL_DIR. Please use the former to point to the executables")
@@ -546,7 +547,9 @@ class ExaGO_Python:
         t5 = time.time()
 
         elapsed = t5 - t0
-        print("""**** Base Cost Timing ****
+
+        if self.comm.Get_rank() == 0:
+            print("""**** Base Cost Timing ****
 Change Tables: {:g}(s)  {:g}(%)
 Write Tables: {:g}(s)  {:g}(%)
 ExaGO: {:g}(s)  {:g}(%)
@@ -560,9 +563,7 @@ Total: {:g}(s)
     t4 - t3, (t4 - t3)/elapsed * 100,
     t5 - t4, (t5 - t4)/elapsed * 100,
     elapsed
-),
-              flush=True
-              )
+), flush=True)
 
         return (obj, set_points)
 

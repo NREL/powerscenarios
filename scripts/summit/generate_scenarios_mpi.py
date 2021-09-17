@@ -18,6 +18,8 @@ comm = MPI.COMM_WORLD
 my_mpi_rank = comm.Get_rank()
 comm_size = comm.Get_size()
 
+read_grid_data = True
+
 if my_mpi_rank == 0:
     start_time = time.time()
 
@@ -47,13 +49,26 @@ comm.Barrier()
 
 if my_mpi_rank == 0:
     grid = Grid(grid_name, bus_df, gen_df, wind_gen_df)
-    grid.retrieve_wind_sites(method="simple proximity")
 
-    grid.make_tables(actuals_start=pd.Timestamp("2007-01-01 00:00:00", tz="utc"),
-                     actuals_end=pd.Timestamp("2007-12-31 23:55:00", tz="utc"),
-                     scenarios_start=pd.Timestamp("2008-01-01 00:00:00", tz="utc"),
-                     scenarios_end=pd.Timestamp("2013-12-31 23:55:00", tz="utc"),
-                    )
+    if read_grid_data:
+        print("Reading h5s for {0}".format(grid_name))
+        # Wind sites
+        filename_wind_sites = "./output/{0}_wind_sites.h5".format(grid_name)
+        grid.wind_sites = pd.read_hdf(filename_wind_sites)
+        # Scenario Table
+        filename_scen_table = "./output/{}_scenarios_table.h5".format(grid_name)
+        grid.scenarios = pd.read_hdf(filename_scen_table)
+        # Actuals Table
+        filename_act_table = "./output/{}_actuals_table.h5".format(grid_name)
+        grid.actuals = pd.read_hdf(filename_act_table)
+
+    else:
+        grid.retrieve_wind_sites(method="simple proximity")
+        grid.make_tables(actuals_start=pd.Timestamp("2007-01-01 00:00:00", tz="utc"),
+                         actuals_end=pd.Timestamp("2007-12-31 23:55:00", tz="utc"),
+                         scenarios_start=pd.Timestamp("2008-01-01 00:00:00", tz="utc"),
+                         scenarios_end=pd.Timestamp("2013-12-31 23:55:00", tz="utc"),
+                        )
     # for actuals, make year you want
     grid.actuals.index = grid.actuals.index.map(lambda t: t.replace(year=2020))
 
@@ -135,10 +150,13 @@ all_actuals_df.index.name = "sim_timestamp"
 
 if my_mpi_rank == 0:
     # Save the scenarios in the requisite format
-    save_dir = "./"
+    save_dir = "./output/"
     utils.save_output(grid, sim_timestamp, all_actuals_df, all_scenarios_df,
                       all_weights_df, n_scenarios, save_dir,
                       df_format_type="Shri")
+
+    # TODO: Save cost_n
+    #
 
 comm.Barrier()
 if my_mpi_rank == 0:
