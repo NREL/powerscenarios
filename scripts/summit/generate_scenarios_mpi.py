@@ -100,7 +100,7 @@ if my_mpi_rank != 0:
 sampling_method = "importance"
 # fidelity = "exago_file"
 fidelity = "exago_lib"
-n_scenarios = 1
+n_scenarios = 10
 n_periods = 1
 
 ########################################################
