@@ -28,8 +28,10 @@ grid_name = "ACTIVSg200"  # TAMU 200 bus case
 
 if grid_name == "ACTIVSg200":
     sim_timestamps = [pd.Timestamp("2020-12-20 08:00:00+0000", tz="UTC"),]
-else:
+elif grid_name = "ACTIVSg2000":
     sim_timestamps = [pd.Timestamp("2020-03-22 10:45:00+0000", tz="UTC"),]
+else:
+    raise NotImplementedError
 
 data_dir = "../../data/grid-data/"
 aux_file_name = os.path.join(data_dir, grid_name, grid_name + ".aux")
