@@ -11,10 +11,10 @@ logging.basicConfig()
 
 
 class Parser(object):
-    """ Class for parsing various grid files 
+    """ Class for parsing various grid files
             TAMU files from: https://electricgrids.engr.tamu.edu/electric-grid-test-cases/
             .aux, .m,
-            RTS-GMLC files from:  
+            RTS-GMLC files from:
     """
 
     blet = "ble"
@@ -24,18 +24,18 @@ class Parser(object):
 
     def remove_spaces_between_quotes(self, line):
         """Internal function to remove spaces in a line if they appear between "" while parsing .aux files for TAMU grids
-        
+
         Required Args:
             line - (String) a line to be modified
         Returns:
             modified line (String)
-            
-            
+
+
         E.g. line:
         '1 "CREVE COEUR 0" 115.00000000000000000000 "NO "'
         turns into:
         '1 "CREVECOEUR0" 115.00000000000000000000 "NO"'
-        
+
         """
 
         quotes_start = False
@@ -69,12 +69,12 @@ class Parser(object):
 
     def read_bus_table(self, grid_file_name):
         """ function to read Bus table from TAMU grid .aux file
-        
+
         Required Args:
             grid_file_name - (String) path to .aux file
         Returns:
-            pandas DataFrame with columns: BusNum, Latitude, Longitude, Zone, 
-            
+            pandas DataFrame with columns: BusNum, Latitude, Longitude, Zone,
+
         Modify source to add other columns.
         """
 
@@ -137,12 +137,12 @@ class Parser(object):
 
     def read_gen_table(self, grid_file_name):
         """ function to read Gen table from TAMU grid .aux file
-        
+
         Required Args:
             grid_file_name - (String) path to .aux file
         Returns:
             pandas DataFrame with columns: BusNum, GenMWMax, GenMWMin, GenWindPowerFactor, GenFuelType
-            
+
         Modify source to add other columns.
         """
 
@@ -217,8 +217,8 @@ class Parser(object):
             aux_file_name - (String) path to .aux file
         Returns:
             bus_df (pandas DataFrame) with columns: BusNum, BusName, Latitude, Longitute
-            gen_df (pandas DataFrame) with columns: GenUID, BusNum, GenFuelType, GenMWMax, GenMWMin, GenID, BusName, Latitude, Longitude 
-            wind_gen_df (pandas DataFrame) with columns: GenUID(index), BusNum, GenFuelType, GenMWMax, GenMWMin, GenID, BusName, Latitude, Longitude 
+            gen_df (pandas DataFrame) with columns: GenUID, BusNum, GenFuelType, GenMWMax, GenMWMin, GenID, BusName, Latitude, Longitude
+            wind_gen_df (pandas DataFrame) with columns: GenUID(index), BusNum, GenFuelType, GenMWMax, GenMWMin, GenID, BusName, Latitude, Longitude
 
         Modify source if other columns are needed
         """
@@ -272,12 +272,12 @@ class Parser(object):
         Required Args:
             bus_csv_file_name - (String) path to RTS bus.csv file
             gen_csv_file_name - (String) path to RTS gen.csv file
-            solar2wind - (Bool) turns all solar generators to wind genearators, default = False 
+            solar2wind - (Bool) turns all solar generators to wind genearators, default = False
         Returns:
-            bus_df (pandas DataFrame) 
-            gen_df (pandas DataFrame) 
-            wind_gen_df (pandas DataFrame) 
-        
+            bus_df (pandas DataFrame)
+            gen_df (pandas DataFrame)
+            wind_gen_df (pandas DataFrame)
+
         """
 
         # print('parsing files: {}, {}\n'.format(bus_csv_file_name, gen_csv_file_name))
@@ -294,7 +294,7 @@ class Parser(object):
             inplace=True,
         )
 
-        # read original gen.csv, 
+        # read original gen.csv,
         gen_df = pd.read_csv(gen_csv_file_name)
 
         ## all we really need is gen ID, Fuel, PMax MW
@@ -319,7 +319,7 @@ class Parser(object):
         # wind generators
         wind_gen_df = gen_df.loc[gen_df["GenFuelType"] == "Wind"].copy()
 
-        # add lat/long info to wind_gen_df 
+        # add lat/long info to wind_gen_df
         wind_gen_df.set_index("BusNum", inplace=True)
         bus_df.set_index("BusNum", inplace = True)
         wind_gen_df = pd.concat([wind_gen_df,bus_df.loc[wind_gen_df.index][["Latitude","Longitude"]]], axis=1)
@@ -351,10 +351,10 @@ class Parser(object):
             table_name - (str) name of the table in .m file before equals sign (e.g. 'chgtab', 'mpc.bus', etc)
             column_names - (list of strings) column names as in .m file (e.g. ['label', 'prob', 'table', 'row', 'col', 'chgtype', 'newval'])
             numeric_columns (list of strings) a subset of column_names that have numeric types (e.g. numeric_columns = ['label', 'prob', 'row', 'newval'])
-        
+
         Returns:
-            data_df - (pandas.DataFrame) 
-        
+            data_df - (pandas.DataFrame)
+
         """
         with open(filename) as f:
             lines = f.readlines()
@@ -393,12 +393,12 @@ class Parser(object):
         self, filename, series_name=None,
     ):
         """ function to read series (values of just one column) in .m files; use to augment bus and gen tables
-            mpc.gentype, mpc.genfuel, and mpc.bus_name are given separately (because those are not numeric columns?) 
+            mpc.gentype, mpc.genfuel, and mpc.bus_name are given separately (because those are not numeric columns?)
         Required Args:
             filename - (str) path to .m file
             table_name - (str) name of the table in .m file before equals sign (e.g. 'mpc.gentype', 'mpc.bus_name', or mpc.genfuel)
         Returns:
-            data_s - (pandas.Series) 
+            data_s - (pandas.Series)
 
         """
         with open(filename) as f:
@@ -619,14 +619,14 @@ class Parser(object):
     # read any table from .aux file
     def read_aux_table(self, grid_file_name, table_name="Bus", branch_nr=1, **kwargs):
         """ function to read table from TAMU grid .aux file
-        
+
         Required Args:
             grid_file_name - (str) path to .aux file
             table_name - (str) one of the following: 'Bus', 'Gen', 'Branch'
             brsnch_nr - (int)  branch table number: 1 or 2 (there are 2 Branch tables: lines and transformers)
         Returns:
             table_df - (pd.DataFrame) table with all available columns in .aux file
-            
+
         """
         if table_name == "Bus":
             all_cols = [

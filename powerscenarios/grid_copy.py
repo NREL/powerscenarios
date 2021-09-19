@@ -1,5 +1,5 @@
 from __future__ import print_function
-import logging
+# import logging
 import pandas as pd
 import numpy as np
 import sys
@@ -14,7 +14,7 @@ from powerscenarios.costs.exago.exago_lib import ExaGO_Lib
 # from exago.opflow import OPFLOW
 # from exago import config
 
-logging.basicConfig()
+# logging.basicConfig()
 
 # do this before importing pywtk, so that WIND_MET_NC_DIR and WIND_FCST_DIR are set correctly
 # if cache dir is set, will use AWS (as opposed to local data)
@@ -579,6 +579,8 @@ class Grid(object):
 
                 pricing_scen_ct = kwargs["pricing_scen_ct"]
                 mpi_comm = kwargs["mpi_comm"]
+                if mpi_comm.Get_rank() == 0:
+                    print('Available Scenarios = ', p_bin.shape[0], ", Requested Scenarios = ", int(pricing_scen_ct))
                 p_bin = p_bin.tail(pricing_scen_ct)
                 pmodel = ExaGO_Lib(self.name,
                                    n_scenarios, # Number of scenarios we actually want in our final csv file

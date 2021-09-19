@@ -137,8 +137,8 @@ class ExaGO_Lib(AbstractCostingFidelity):
             wind_scen_df.loc[idx,wgen] = 0.0
 
         self.ego.comm.Barrier()
-        if my_mpi_rank == 0:
-            print('Available Scenarios = ', wind_scen_df.shape[0], ", Requested Scenarios = ", int(self.sopflow_options_dict['nscenarios']))
+        # if my_mpi_rank == 0:
+        #     print('Available Scenarios = ', wind_scen_df.shape[0], ", Requested Scenarios = ", int(self.sopflow_options_dict['nscenarios']))
 
         assert wind_scen_df.shape[0] >= int(self.sopflow_options_dict['nscenarios'])
         nscen_global = int(self.sopflow_options_dict['nscenarios']) # wind_scen_df.shape[0]
@@ -170,7 +170,7 @@ class ExaGO_Lib(AbstractCostingFidelity):
             opf_object.set_include_loadloss(True)
             opf_object.set_loadloss_penalty(833)
             opf_object.set_include_powerimbalance(True)
-            opf_object.set_powerimbalance_penalty(833)
+            opf_object.set_powerimbalance_penalty(933)
             opf_object.set_model('POWER_BALANCE_POLAR')
             opf_object.set_solver('IPOPT')
             opf_object.set_initialization('ACPF')
