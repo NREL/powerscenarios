@@ -95,7 +95,7 @@ sim_timestamps = [pd.Timestamp("2020-09-23 07:00:00+0000", tz="UTC"),]
 sampling_method = "importance"
 # fidelity = "exago_file"
 fidelity = "exago_lib"
-n_scenarios = 1
+n_scenarios = 10
 n_periods = 1
 
 ########################################################
