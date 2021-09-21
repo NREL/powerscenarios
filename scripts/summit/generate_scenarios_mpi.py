@@ -141,7 +141,7 @@ for sim_timestamp in sim_timestamps:
         # random_seed=6,
         random_seed=random_seed,
         output_format=0,
-        pricing_scen_ct = 8,
+        pricing_scen_ct = 500000,
         mpi_comm = comm
     )
     all_scenarios_df.loc[sim_timestamp] = scenarios_df
@@ -160,8 +160,8 @@ if my_mpi_rank == 0:
                       all_weights_df, n_scenarios, save_dir,
                       df_format_type="Shri")
 
-    # TODO: Save cost_n
-    display(cost_n)
+    cost_n_fname = "{0}_cost_n.csv".format(grid_name)
+    cost_n.to_csv(os.path.join(save_dir, cost_n_fname))
 
 comm.Barrier()
 if my_mpi_rank == 0:
