@@ -98,9 +98,7 @@ if my_mpi_rank != 0:
 #                   # pd.Timestamp("2020-09-23 07:05:00+0000", tz="UTC")]
 
 # other parameters
-# sampling_method="monte carlo"
 sampling_method = "importance"
-# fidelity = "exago_file"
 fidelity = "exago_lib"
 n_scenarios = 10
 n_periods = 1
