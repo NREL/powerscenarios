@@ -28,7 +28,7 @@ grid_name = "ACTIVSg200"  # TAMU 200 bus case
 
 if grid_name == "ACTIVSg200":
     sim_timestamps = [pd.Timestamp("2020-12-20 08:00:00+0000", tz="UTC"),]
-elif grid_name = "ACTIVSg2000":
+elif grid_name == "ACTIVSg2000":
     sim_timestamps = [pd.Timestamp("2020-03-22 10:45:00+0000", tz="UTC"),]
 else:
     raise NotImplementedError
@@ -98,9 +98,7 @@ if my_mpi_rank != 0:
 #                   # pd.Timestamp("2020-09-23 07:05:00+0000", tz="UTC")]
 
 # other parameters
-# sampling_method="monte carlo"
 sampling_method = "importance"
-# fidelity = "exago_file"
 fidelity = "exago_lib"
 n_scenarios = 10
 n_periods = 1
