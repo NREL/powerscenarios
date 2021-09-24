@@ -23,8 +23,8 @@ read_grid_data = True
 if my_mpi_rank == 0:
     start_time = time.time()
 
-grid_name = "ACTIVSg200"  # TAMU 200 bus case
-# grid_name = "ACTIVSg2000"  # TAMU 2000 bus case
+# grid_name = "ACTIVSg200"  # TAMU 200 bus case
+grid_name = "ACTIVSg2000"  # TAMU 2000 bus case
 
 if grid_name == "ACTIVSg200":
     sim_timestamps = [pd.Timestamp("2020-12-20 08:00:00+0000", tz="UTC"),]
@@ -141,7 +141,7 @@ for sim_timestamp in sim_timestamps:
         # random_seed=6,
         random_seed=random_seed,
         output_format=0,
-        pricing_scen_ct = 500000,
+        pricing_scen_ct = 300000,
         mpi_comm = comm
     )
     all_scenarios_df.loc[sim_timestamp] = scenarios_df
