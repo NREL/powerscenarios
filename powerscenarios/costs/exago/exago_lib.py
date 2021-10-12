@@ -522,48 +522,30 @@ class ExaGO_Python:
         wf_df = wind_fcst_df
         self._set_wind_new(self.opf_base, wf_df, self.imat.get_table('gen'), self.gen_type)
 
-        t1 = time.time()
-
         # matpower_file = os.path.join('case_{}.m'.format(self.grid_name))
         # self.imat.write_matpower_file(matpower_file)
 
-        t2 = time.time()
-
         # Python call
         petsc_error_code = self.opf_base.solve()
-        # print("petsc_error_code = ", petsc_error_code)
+        if self.comm.Get_rank() == 0:
+            self.opf_base.save_solution('MATPOWER', "base_{0}.m".format(self.grid_name))
         self.opf_base.solution_to_ps()
 
-        t3 = time.time()
+        t1 = time.time()
+
         obj = self.opf_base.objective_function
         set_points = self._extract_set_points(self.opf_base)
         # idx = self._non_wind_gens(self.gen_type)
         # set_points = result.get_table('gen').loc[idx,:]
 
-        t4 = time.time()
+        t2 = time.time()
 
-
-
-        t5 = time.time()
-
-        elapsed = t5 - t0
+        total_elapsed = t2 - t0
 
         if self.comm.Get_rank() == 0:
-            print("""**** Base Cost Timing ****
-Change Tables: {:g}(s)  {:g}(%)
-Write Tables: {:g}(s)  {:g}(%)
-ExaGO: {:g}(s)  {:g}(%)
-Set Points: {:g}(s)  {:g}(%)
-Base Cost: {:g}(s)  {:g}(%)
-Total: {:g}(s)
-""".format(
-    t1 - t0, (t1 - t0)/elapsed * 100,
-    t2 - t1, (t2 - t1)/elapsed * 100,
-    t3 - t2, (t3 - t2)/elapsed * 100,
-    t4 - t3, (t4 - t3)/elapsed * 100,
-    t5 - t4, (t5 - t4)/elapsed * 100,
-    elapsed
-), flush=True)
+            print("**** Base Cost Timing ****")
+            print("Total time in function = {0}".format(total_elapsed))
+            print("Time in base cost solve = {0}".format(t1 - t0))
 
         return (obj, set_points)
 

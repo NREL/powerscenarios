@@ -11,7 +11,7 @@
 source ${PROJWORK}/csc359/NREL/kpanda/setup-environment-offline.sh
 cd ${PROJWORK}/csc359/NREL/kpanda/powerscenarios/scripts/summit
 
-jsrun -n42000 python generate_scenarios_mpi.py # > fout_TAMU200 2> errout_TAMU200
+jsrun -n42000 python generate_scenarios_mpi.py
 
 
 # # TODO: Make sure the branch is -sopflow/new-scenario-file-format

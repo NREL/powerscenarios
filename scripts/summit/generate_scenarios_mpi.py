@@ -21,7 +21,7 @@ comm_size = comm.Get_size()
 read_grid_data = True
 
 if my_mpi_rank == 0:
-    start_time = time.time()
+    start_time = time.time() # Start the timinig
 
 # grid_name = "ACTIVSg200"  # TAMU 200 bus case
 grid_name = "ACTIVSg2000"  # TAMU 2000 bus case
@@ -97,6 +97,9 @@ if my_mpi_rank != 0:
 # sim_timestamps = [pd.Timestamp("2020-03-22 10:45:00+0000", tz="UTC"),]
 #                   # pd.Timestamp("2020-09-23 07:05:00+0000", tz="UTC")]
 
+if my_mpi_rank == 0:
+    table_making_time = time.time()
+
 # other parameters
 sampling_method = "importance"
 fidelity = "exago_lib"
@@ -126,11 +129,8 @@ all_scenarios_df = pd.DataFrame(
     index=index, columns=grid.wind_generators["GenUID"].values
 )
 
-
+comm.Barrier()
 for sim_timestamp in sim_timestamps:
-    # print("sim_timestamp = {}".format(sim_timestamp))
-
-    # random_seed = 594081473
     scenarios_df, weights_df, p_bin, cost_n = grid.generate_wind_scenarios(
         sim_timestamp,
         power_quantiles=[0.0, 0.1, 0.9, 1.0],
@@ -154,6 +154,8 @@ all_actuals_df = grid.actuals.loc[sim_timestamps].drop("TotalPower", axis=1).cop
 all_actuals_df.index.name = "sim_timestamp"
 
 if my_mpi_rank == 0:
+    scen_gen_time = time.time()
+
     # Save the scenarios in the requisite format
     save_dir = "./output/"
     utils.save_output(grid, sim_timestamp, all_actuals_df, all_scenarios_df,
@@ -163,8 +165,20 @@ if my_mpi_rank == 0:
     cost_n_fname = "{0}_cost_n.csv".format(grid_name)
     cost_n.to_csv(os.path.join(save_dir, cost_n_fname))
 
+    write_time = time.time()
+
 comm.Barrier()
 if my_mpi_rank == 0:
     end_time = time.time()
-    time_elapsed = end_time - start_time
-    print("\ntime_elapsed = ", time_elapsed)
+
+    time_for_input_tables = table_making_time - start_time
+    time_for_scen_df = scen_gen_time - table_making_time
+    time_for_writing_dfs = end_time - scen_gen_time
+    total_time_elapsed = end_time - start_time
+
+    print("\n")
+    print("***** Total Timing *****")
+    print("time for reading inputs = ", time_for_input_tables)
+    print("time for creating scenarios = ", time_for_scen_df)
+    print("time for writing dataframes = ", time_for_writing_dfs)
+    print("total time elapsed = ", total_time_elapsed)
