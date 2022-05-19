@@ -42,7 +42,7 @@ class Grid(object):
 
     # attributes
 
-    blet = "ble"
+    blet = "bleT"
     WTK_DATA_PRECISION = 6
 
     # if __repr__ is defined, then __str__ = __repr__ (converse is not true)
@@ -528,6 +528,11 @@ class Grid(object):
             weights_df.loc[timestamps[1]] = dict(
                 zip(range(1, n_scenarios + 1), np.ones(n_scenarios))
             )
+            ## also want if we want to return trivial cont_n  
+            cost_n = pd.Series(data=1, index = p_bin.index)
+            cost_n_orig = cost_n
+
+
 
 
         elif sampling_method == "importance":
@@ -547,6 +552,7 @@ class Grid(object):
                                         p_bin,
                                         total_power_t0)
                 cost_n = pmodel.compute_scenario_cost(random_seed=594081473)
+
             elif fidelity == "exago_file":
                 # Import the module
                 from powerscenarios.costs.exago.exago_file import ExaGO_File

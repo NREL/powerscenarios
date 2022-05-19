@@ -50,7 +50,6 @@ class CheckmarkModel(AbstractCostingFidelity):
         return cost
 
     def compute_scenario_cost(self, random_seed=np.random.randint(2 ** 31 - 1)):
-        # compute costs of each 1-period scenario
 
         p_bin = self.p_bin
         total_power_t0 = self.total_power_t0
@@ -62,19 +61,11 @@ class CheckmarkModel(AbstractCostingFidelity):
 
         for scenario_start_t in p_bin.index[:]:
             ### note: single period scenario starts and ends with scenario_start_t
-            ## deviation from t0 (first period)
-            deviation = (
-                scenarios_df.loc[scenario_start_t, "TotalPower"] - total_power_t0
-            )
-            scenario_cost = checkmark_cost(deviation)
-            #print("deviation = {}".format(deviation))
-            #print("scenario_cost = {}".format(scenario_cost))
-
-            #### consecutive time periods: 2,3,...
-            #### if n_periods == 1: pass; if n_periods == 2: one loop, if n_periods == 2: two loops, etc.
+            scenario_cost = 0
+            #### consecutive time periods: 1,2,3,...
             for period_timestamp in pd.date_range(
                 scenario_start_t,
-                scenario_start_t + pd.Timedelta("5min") * (n_periods - 2),
+                scenario_start_t + pd.Timedelta("5min") * (n_periods - 1),
                 freq="5min",
             ):
                 deviation = scenarios_df.loc[period_timestamp, "Deviation"]
@@ -83,7 +74,7 @@ class CheckmarkModel(AbstractCostingFidelity):
                 #print("deviation cost = {}".format(checkmark_cost(deviation)))
                 #print("scenario_cost = {}".format(scenario_cost))
 
-            #### record scenario cost to cost_n series
+            #### record scenario cost to cost_n series 
             cost_n.loc[scenario_start_t] = scenario_cost
 
         return cost_n

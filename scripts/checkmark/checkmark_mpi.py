@@ -13,6 +13,7 @@ import os
 import sys
 import argparse
 import logging
+import logging.handlers
 import yaml
 
 
@@ -54,10 +55,20 @@ def config_logging(verbose, output_dir):
     # logging.basicConfig(level=log_level, format=log_format)
     logger = logging.getLogger(__name__)
     logger.setLevel(log_level)
+
     # define file handler and set formatter
-    file_handler = logging.FileHandler(
-        os.path.join(output_dir, "log_checkmark_mpi.log")
+    log_filename = "log_checkmark_mpi.log"
+    should_roll_over_log = os.path.isfile(os.path.join(output_dir, log_filename))
+    file_handler = logging.handlers.RotatingFileHandler(
+        os.path.join(output_dir, log_filename)
     )
+    if should_roll_over_log:
+        handler.doRollover()
+
+    # file_handler = logging.FileHandler(
+    #     os.path.join(output_dir, "log_checkmark_mpi.log")
+    # )
+
     formatter = logging.Formatter(
         "%(asctime)s : %(levelname)s : %(name)s : %(message)s"
     )
@@ -178,7 +189,9 @@ def main():
         if config["input"]["read_tables"]:
             tables_dir = os.path.expandvars(config["input"]["tables_dir"])
             logger.info(
-                "\n\nreading in tables(wind sites, actuals, scenarios) from h5 files in: {}".format(tables_dir)
+                "\n\nreading in tables(wind sites, actuals, scenarios) from h5 files in: {}".format(
+                    tables_dir
+                )
             )
 
             # read instead of retrieve_wind_sites
@@ -335,7 +348,7 @@ def main():
         grid.scenarios = new_s_df
 
         t1 = time.time()
-        logger.info("Ellapsed scenario pricing time: {} s".format(t1-t0))
+        logger.info("Ellapsed scenario pricing time: {} s".format(t1 - t0))
 
         # ##### for debugging purposes record what you got
         # logger.info("\n\n rank {} has new_s_df:".format(rank))
@@ -395,7 +408,6 @@ def main():
         ##### save generated dataframes
         save_dir = config["output"]["dir"]
         logger.info("\n\nsaving output to {}".format(save_dir))
-
 
         actuals_df = (
             grid.actuals.loc[sim_timestamp:sim_timestamp]
